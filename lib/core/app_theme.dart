@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   
+  // --- TU NUEVA PALETA ---
   static const Color primaryMint = Color(0xFF85E6C0);
   static const Color primaryMintDark = Color(0xFF6BB39B);
   static const Color background = Color(0xFFF7F4E8); 
@@ -10,9 +11,10 @@ class AppTheme {
 
   static ThemeData getTheme() {
     return ThemeData(
-
+      // 1. Fuente
       fontFamily: 'Inter',
-        
+      
+      // 2. Esquema de colores principal (Corregido)
       primaryColor: primaryMint,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryMint,
