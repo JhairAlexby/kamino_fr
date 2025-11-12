@@ -1,56 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:kamino_fr/core/app_router.dart';
+import 'package:provider/provider.dart';
 
-// Este es tu VISTAMODELO (ViewModel)
 class LoginProvider extends ChangeNotifier {
-  
-  // --- Clave del Formulario ---
-  // Se la pasaremos desde la Vista para poder validar
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-  // --- Controladores de Texto ---
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // --- Estado de la UI ---
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   bool _obscurePassword = true;
   bool get obscurePassword => _obscurePassword;
 
-  // --- Métodos (Lógica) ---
-
-  // Método para cambiar la visibilidad de la contraseña
   void togglePasswordVisibility() {
     _obscurePassword = !_obscurePassword;
-    notifyListeners(); // Avisa a la Vista que debe redibujarse
+    notifyListeners(); 
   }
 
-  // Método principal de Login
-  Future<void> login() async {
-    // 1. Valida el formulario
+  Future<void> login(BuildContext context) async {
     if (!formKey.currentState!.validate()) {
-      return; // Si no es válido, no hace nada
+      return; 
     }
 
-    // 2. Inicia el estado de carga
     _isLoading = true;
-    notifyListeners(); // Avisa a la Vista
-
-    // 3. Simulación de la llamada al Caso de Uso (y este al API)
-    // (Aquí es donde llamarías a tu LoginUseCase)
+    notifyListeners(); 
     await Future.delayed(const Duration(seconds: 2));
-
-    // 4. Finaliza el estado de carga
     _isLoading = false;
-    notifyListeners(); // Avisa a la Vista
+    notifyListeners(); 
 
-    // TODO: 5. Aquí iría la navegación si el login es exitoso
-    // Navigator.pushReplacementNamed(context, '/home');
+    context.read<AppState>().setPath(AppRoutePath.home);
   }
 
-  // --- Limpieza ---
-  // Sobrescribimos 'dispose' para limpiar los controladores
   @override
   void dispose() {
     emailController.dispose();

@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
         routerDelegate: AppRouterDelegate(appState),
         routeInformationParser: AppRouteInformationParser(),
         routeInformationProvider: PlatformRouteInformationProvider(
-          initialRouteInformation: const RouteInformation(location: '/home'),
+          initialRouteInformation: const RouteInformation(location: '/welcome'),
         ),
       ),
     );

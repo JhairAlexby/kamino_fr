@@ -29,8 +29,6 @@ class HomeProvider extends ChangeNotifier {
   }
 
   void onInterestButtonPressed() {
-    // Aquí abriremos el selector de intereses o lanzaremos una búsqueda
-    // Por ahora: demo -> añadimos otra recomendación al principio
     recommendations.insert(
       0,
       RecommendationItem(title: 'Restaurante La Plaza', category: 'Comida', distanceText: '10 min'),
@@ -39,16 +37,13 @@ class HomeProvider extends ChangeNotifier {
   }
 
   void onSelect(RecommendationItem item) {
-    // Abrir detalle del POI o resaltar en mapa
   }
 
   void onNavigateTo(RecommendationItem item) {
-    // Iniciar cálculo de ruta y mostrar ETA en el mapa
   }
 
   void onSearchChanged(String value) {
     searchQuery = value;
-    // Aquí podrás filtrar recomendaciones en base al query
     notifyListeners();
   }
 

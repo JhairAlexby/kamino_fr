@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/home_provider.dart';
+import '../widgets/generation_modal.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -23,7 +24,6 @@ class _HomePageState extends State<HomePage> {
               bottom: false,
               child: Stack(
                 children: [
-                  // Fondo: Mapa (placeholder) -> luego reemplazamos con google_maps_flutter
                   Positioned.fill(
                     child: Container(
                       decoration: const BoxDecoration(
@@ -51,7 +51,12 @@ class _HomePageState extends State<HomePage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      onPressed: vm.onInterestButtonPressed,
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => const GenerationModal(),
+                        );
+                      },
                       child: Icon(
                         Icons.explore,
                         color: AppTheme.textBlack,

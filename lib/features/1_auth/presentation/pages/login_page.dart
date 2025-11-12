@@ -1,4 +1,3 @@
-// Importaciones
 import 'package:kamino_fr/core/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_theme.dart';
@@ -28,7 +27,6 @@ class _LoginPageState extends State<LoginPage> {
           child: Consumer<LoginProvider>(
             builder: (context, provider, child) {
               final isLoading = provider.isLoading;
-
               return SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,8 +35,6 @@ class _LoginPageState extends State<LoginPage> {
                       title: 'Hola!',
                       subtitle: 'Bienvenido de vuelta',
                     ),
-                    // ... existing code ...
-                    // (Se eliminó el AnimatedBuilder del header antiguo)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 30.0),
                       child: Column(
@@ -111,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
                           AuthPrimaryButton(
                             text: 'Iniciar Sesión',
                             isLoading: isLoading,
-                            onPressed: isLoading ? null : () => context.read<LoginProvider>().login(),
+                            onPressed: isLoading ? null : () => provider.login(context),
                           ),
                           const SizedBox(height: 30.0),
                           AuthBottomPrompt(

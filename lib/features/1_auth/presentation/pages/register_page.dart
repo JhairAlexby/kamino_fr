@@ -27,12 +27,10 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Consumer<RegisterProvider>(
             builder: (context, provider, child) {
               final isLoading = provider.isLoading;
-
               return SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // REEMPLAZO: Header reutilizable
                     const AuthHeader(
                       title: 'Hola!',
                       subtitle: 'Estas listo para una nueva aventura?',
@@ -56,7 +54,6 @@ class _RegisterPageState extends State<RegisterPage> {
                             key: provider.formKey,
                             child: Column(
                               children: [
-                                // REEMPLAZO: Nombre
                                 AuthInput(
                                   controller: provider.nameController,
                                   hintText: 'Nombre',
@@ -69,7 +66,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                   },
                                 ),
                                 const SizedBox(height: 20.0),
-                                // REEMPLAZO: Email
                                 AuthInput(
                                   controller: provider.emailController,
                                   hintText: 'Tu@correo.com',
@@ -86,7 +82,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                   },
                                 ),
                                 const SizedBox(height: 20.0),
-                                // REEMPLAZO: Contraseña
                                 AuthInput(
                                   controller: provider.passwordController,
                                   hintText: 'Contraseña',
@@ -103,7 +98,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                   },
                                 ),
                                 const SizedBox(height: 20.0),
-                                // REEMPLAZO: Confirmar contraseña
                                 AuthInput(
                                   controller: provider.confirmPasswordController,
                                   hintText: 'Confirmar Contraseña',
@@ -123,14 +117,12 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ),
                           const SizedBox(height: 25.0),
-                          // REEMPLAZO: Botón primario reutilizable
                           AuthPrimaryButton(
                             text: 'Registrarse',
                             isLoading: isLoading,
                             onPressed: isLoading ? null : () => context.read<RegisterProvider>().register(),
                           ),
                           const SizedBox(height: 30.0),
-                          // REEMPLAZO: Prompt inferior
                           AuthBottomPrompt(
                             text: 'Ya tienes cuenta? ',
                             actionText: 'Inicia Sesion',
@@ -139,7 +131,6 @@ class _RegisterPageState extends State<RegisterPage> {
                             },
                           ),
                           const SizedBox(height: 5.0),
-                          // REEMPLAZO: Logo
                           const Align(
                             alignment: Alignment.center,
                             child: AuthLogo(size: 100),

@@ -49,7 +49,7 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
 }
 
 class AppState extends ChangeNotifier {
-  AppRoutePath _current = AppRoutePath.home;
+  AppRoutePath _current = AppRoutePath.welcome;
   AppRoutePath get currentPath => _current;
 
   void setPath(AppRoutePath path) {
