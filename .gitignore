@@ -50,4 +50,7 @@ config.*.json
 !config.prod.template.json
 
 # Trae IDE workspace
+
 .trae/
+/.trae*/
+
