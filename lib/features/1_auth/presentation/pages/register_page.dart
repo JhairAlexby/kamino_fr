@@ -27,7 +27,15 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Consumer<RegisterProvider>(
             builder: (context, provider, child) {
               final isLoading = provider.isLoading;
+              final size = MediaQuery.of(context).size;
+              final gapXL = (size.height * 0.06).clamp(32.0, 60.0) as double;
+              final gapL = (size.height * 0.04).clamp(20.0, 40.0) as double;
+              final gapM = (size.height * 0.025).clamp(14.0, 28.0) as double;
+              final gapS = (size.height * 0.018).clamp(10.0, 22.0) as double;
               return SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -35,12 +43,15 @@ class _RegisterPageState extends State<RegisterPage> {
                       title: 'Hola!',
                       subtitle: 'Estas listo para una nueva aventura?',
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 40.0),
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 520),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                          SizedBox(height: gapXL),
                           const Text(
                             'Crear Cuenta',
                             style: TextStyle(
@@ -49,7 +60,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 20.0),
+                          SizedBox(height: gapM),
                           Form(
                             key: provider.formKey,
                             child: Column(
@@ -65,7 +76,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 20.0),
+                                SizedBox(height: gapS),
                                 AuthInput(
                                   controller: provider.emailController,
                                   hintText: 'Tu@correo.com',
@@ -81,7 +92,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 20.0),
+                                SizedBox(height: gapS),
                                 AuthInput(
                                   controller: provider.passwordController,
                                   hintText: 'Contraseña',
@@ -97,7 +108,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 20.0),
+                                SizedBox(height: gapS),
                                 AuthInput(
                                   controller: provider.confirmPasswordController,
                                   hintText: 'Confirmar Contraseña',
@@ -116,13 +127,13 @@ class _RegisterPageState extends State<RegisterPage> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 25.0),
+                          SizedBox(height: gapM),
                           AuthPrimaryButton(
                             text: 'Registrarse',
                             isLoading: isLoading,
                             onPressed: isLoading ? null : () => context.read<RegisterProvider>().register(),
                           ),
-                          const SizedBox(height: 30.0),
+                          SizedBox(height: gapL),
                           AuthBottomPrompt(
                             text: 'Ya tienes cuenta? ',
                             actionText: 'Inicia Sesion',
@@ -130,13 +141,15 @@ class _RegisterPageState extends State<RegisterPage> {
                               context.read<AppState>().setPath(AppRoutePath.login);
                             },
                           ),
-                          const SizedBox(height: 5.0),
+                          SizedBox(height: gapS),
                           const Align(
                             alignment: Alignment.center,
                             child: AuthLogo(size: 100),
                           ),
-                          const SizedBox(height: 50.0),
-                        ],
+                          SizedBox(height: gapXL),
+                          ],
+                          ),
+                        ),
                       ),
                     ),
                   ],

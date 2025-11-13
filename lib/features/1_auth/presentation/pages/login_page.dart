@@ -27,7 +27,16 @@ class _LoginPageState extends State<LoginPage> {
           child: Consumer<LoginProvider>(
             builder: (context, provider, child) {
               final isLoading = provider.isLoading;
+              final size = MediaQuery.of(context).size;
+              final gapXL = (size.height * 0.06).clamp(32.0, 60.0) as double;
+              final gapL = (size.height * 0.04).clamp(20.0, 40.0) as double;
+              final gapM = (size.height * 0.025).clamp(14.0, 28.0) as double;
+              final gapS = (size.height * 0.018).clamp(10.0, 22.0) as double;
+              final gapXS = (size.height * 0.012).clamp(6.0, 16.0) as double;
               return SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -35,12 +44,15 @@ class _LoginPageState extends State<LoginPage> {
                       title: 'Hola!',
                       subtitle: 'Bienvenido de vuelta',
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 50.0),
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 520),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                          SizedBox(height: gapXL),
                           const Text(
                             'Iniciar Sesion',
                             style: TextStyle(
@@ -49,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 20.0),
+                          SizedBox(height: gapM),
                           Form(
                             key: provider.formKey,
                             child: Column(
@@ -69,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 20.0),
+                                SizedBox(height: gapS),
                                 AuthInput(
                                   controller: provider.passwordController,
                                   hintText: 'Contraseña',
@@ -88,7 +100,7 @@ class _LoginPageState extends State<LoginPage> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 10.0),
+                          SizedBox(height: gapXS),
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
@@ -103,13 +115,13 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 25.0),
+                          SizedBox(height: gapM),
                           AuthPrimaryButton(
                             text: 'Iniciar Sesión',
                             isLoading: isLoading,
                             onPressed: isLoading ? null : () => provider.login(context),
                           ),
-                          const SizedBox(height: 30.0),
+                          SizedBox(height: gapL),
                           AuthBottomPrompt(
                             text: 'No tienes cuenta? ',
                             actionText: 'Registrate',
@@ -117,13 +129,15 @@ class _LoginPageState extends State<LoginPage> {
                               context.read<AppState>().setPath(AppRoutePath.register);
                             },
                           ),
-                          const SizedBox(height: 20.0),
+                          SizedBox(height: gapS),
                           const Align(
                             alignment: Alignment.center,
                             child: AuthLogo(size: 100),
                           ),
-                          const SizedBox(height: 50.0),
-                        ],
+                          SizedBox(height: gapXL),
+                          ],
+                          ),
+                        ),
                       ),
                     ),
                   ],

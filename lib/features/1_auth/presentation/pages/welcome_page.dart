@@ -25,49 +25,59 @@ class WelcomePage extends StatelessWidget {
         body: SafeArea(
           child: Consumer<WelcomeProvider>(
             builder: (context, provider, child) {
+              final size = MediaQuery.of(context).size;
+              final insets = MediaQuery.of(context).padding;
+              final viewportHeight = size.height - insets.top - insets.bottom;
+              final gapTop = (viewportHeight * 0.1).clamp(48.0, 100.0) as double;
+              final gapL = (viewportHeight * 0.05).clamp(24.0, 60.0) as double;
               return SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40.0),
-                  child: Container(
-                    height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 80),
-                        const AuthLogo(size: 150),
-                        const SizedBox(height: 50),
-                        const SizedBox(height: 50),
-                        RichText(
-                          textAlign: TextAlign.center,
-                          text: const TextSpan(
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                            children: [
-                              TextSpan(text: 'Conecta. '),
-                              TextSpan(
-                                text: 'Descubre.',
-                                style: TextStyle(color: AppTheme.primaryMint),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 600),
+                      child: SizedBox(
+                        height: viewportHeight,
+                        child: Column(
+                          children: [
+                            SizedBox(height: gapTop),
+                            const AuthLogo(size: 150),
+                            SizedBox(height: gapL),
+                            RichText(
+                              textAlign: TextAlign.center,
+                              text: const TextSpan(
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                                children: [
+                                  TextSpan(text: 'Conecta. '),
+                                  TextSpan(
+                                    text: 'Descubre.',
+                                    style: TextStyle(color: AppTheme.primaryMint),
+                                  ),
+                                  TextSpan(text: ' Avanza.'),
+                                ],
                               ),
-                              TextSpan(text: ' Avanza.'),
-                            ],
-                          ),
+                            ),
+                            const Spacer(),
+                            AuthPrimaryButton(
+                              text: 'Registrate',
+                              isLoading: false,
+                              onPressed: () => provider.navigateToRegister(context),
+                            ),
+                            const SizedBox(height: 20),
+                            AuthBottomPrompt(
+                              text: 'Ya tienes cuenta? ',
+                              actionText: 'Inicia Sesion',
+                              onTap: () => provider.navigateToLogin(context),
+                            ),
+                            SizedBox(height: gapL),
+                          ],
                         ),
-                        const Spacer(),
-                        AuthPrimaryButton(
-                          text: 'Registrate',
-                          isLoading: false,
-                          onPressed: () => provider.navigateToRegister(context),
-                        ),
-                        const SizedBox(height: 20),
-                        AuthBottomPrompt(
-                          text: 'Ya tienes cuenta? ',
-                          actionText: 'Inicia Sesion',
-                          onTap: () => provider.navigateToLogin(context),
-                        ),
-                        const SizedBox(height: 40),
-                      ],
+                      ),
                     ),
                   ),
                 ),

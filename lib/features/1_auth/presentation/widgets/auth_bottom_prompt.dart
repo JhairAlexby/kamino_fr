@@ -17,8 +17,9 @@ class AuthBottomPrompt extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.center,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 4.0,
         children: [
           Text(
             text,
