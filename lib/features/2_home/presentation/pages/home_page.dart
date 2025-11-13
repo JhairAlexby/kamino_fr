@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'dart:async';
+import 'package:kamino_fr/config/environment_config.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/home_provider.dart';
 import '../widgets/generation_modal.dart';
@@ -12,6 +17,67 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  MapboxMap? _mapboxMap;
+  bool _styleLoaded = false;
+  StreamSubscription<geo.Position>? _posSub;
+  bool _followUser = true;
+  DateTime? _lastCameraUpdate;
+  geo.Position? _lastGeoPos;
+
+  Future<void> _enableUserLocation() async {
+    final status = await Permission.locationWhenInUse.request();
+    if (status.isGranted) {
+      await _applyLocationSettings();
+      await _centerCameraOnUser();
+    } else if (status.isPermanentlyDenied) {
+      await openAppSettings();
+    }
+  }
+
+  Future<void> _applyLocationSettings() async {
+    if (_mapboxMap == null) return;
+    await _mapboxMap!.location.updateSettings(
+      LocationComponentSettings(
+        enabled: true,
+        pulsingEnabled: true,
+        puckBearingEnabled: true,
+        showAccuracyRing: true,
+        locationPuck: LocationPuck(),
+      ),
+    );
+  }
+
+  Future<void> _centerCameraOnUser() async {
+    try {
+      final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+      final pos = Position(geoPos.longitude, geoPos.latitude);
+      _lastGeoPos = geoPos;
+      await _mapboxMap?.setCamera(
+        CameraOptions(center: Point(coordinates: pos), zoom: 14),
+      );
+    } catch (_) {}
+  }
+
+  void _startFollow() {
+    _posSub?.cancel();
+    _posSub = geo.Geolocator.getPositionStream(locationSettings: const geo.LocationSettings(accuracy: geo.LocationAccuracy.best, distanceFilter: 3))
+        .listen((geoPos) async {
+      if (!_followUser) return;
+      _lastGeoPos = geoPos;
+      final now = DateTime.now();
+      if (_lastCameraUpdate != null && now.difference(_lastCameraUpdate!).inMilliseconds < 1000) return;
+      _lastCameraUpdate = now;
+      final pos = Position(geoPos.longitude, geoPos.latitude);
+      await _mapboxMap?.setCamera(CameraOptions(center: Point(coordinates: pos)));
+    });
+  }
+
+  @override
+  void dispose() {
+    _posSub?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -25,12 +91,37 @@ class _HomePageState extends State<HomePage> {
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage('assets/images/Mapa.webp'),
-                          fit: BoxFit.cover,
-                        ),
+                    child: MapWidget(
+                      cameraOptions: CameraOptions(
+                        center: Point(coordinates: Position(-98.0, 39.5)),
+                        zoom: 2,
+                        bearing: 0,
+                        pitch: 0,
+                      ),
+                      onMapCreated: (controller) {
+                        _mapboxMap = controller;
+                        _enableUserLocation();
+                        _startFollow();
+                      },
+                      onStyleLoadedListener: (event) async {
+                        _styleLoaded = true;
+                        await _applyLocationSettings();
+                      },
+                    ),
+                  ),
+                  Positioned(
+                    right: 24,
+                    bottom: 60,
+                    child: FloatingActionButton(
+                      backgroundColor: AppTheme.primaryMint,
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      onPressed: _centerCameraOnUser,
+                      child: Icon(
+                        Icons.my_location,
+                        color: AppTheme.textBlack,
                       ),
                     ),
                   ),

@@ -12,9 +12,12 @@ import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/core/network/http_client.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_api.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   final config = EnvironmentConfig.load();
+  MapboxOptions.setAccessToken(config.mapboxAccessToken);
   runApp(MyApp(config: config));
 }
 

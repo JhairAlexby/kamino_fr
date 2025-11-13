@@ -8,6 +8,7 @@ class EnvironmentConfig {
   final String environment;
   final bool debugMode;
   final int maxRetries;
+  final String mapboxAccessToken;
 
   EnvironmentConfig._({
     required this.apiBaseUrl,
@@ -17,6 +18,7 @@ class EnvironmentConfig {
     required this.environment,
     required this.debugMode,
     required this.maxRetries,
+    required this.mapboxAccessToken,
   });
 
   static EnvironmentConfig load({void Function(String message)? onWarning}) {
@@ -46,8 +48,11 @@ class EnvironmentConfig {
         ? _maxRetriesInt
         : _parseInt(_maxRetriesStr, _maxRetriesInt, onWarning);
 
+    const mapboxToken = String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
+
     _require(baseUrl.isNotEmpty, 'API_BASE_URL');
     _require(key.isNotEmpty, 'API_KEY');
+    _require(mapboxToken.isNotEmpty, 'MAPBOX_ACCESS_TOKEN');
 
     _validateUrl(baseUrl);
     _validateRange(apiTimeout > 0 && apiTimeout <= 60000, 'API_TIMEOUT');
@@ -61,6 +66,7 @@ class EnvironmentConfig {
       environment: environment.isNotEmpty ? environment : 'development',
       debugMode: debugMode,
       maxRetries: maxRetries,
+      mapboxAccessToken: mapboxToken,
     );
   }
 

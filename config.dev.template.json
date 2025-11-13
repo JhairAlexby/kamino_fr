@@ -5,5 +5,6 @@
   "API_TIMEOUT": "5000",
   "ENVIRONMENT": "development",
   "DEBUG_MODE": "true",
-  "MAX_RETRIES": "3"
+  "MAX_RETRIES": "3",
+  "MAPBOX_ACCESS_TOKEN": "CHANGE_ME"
 }

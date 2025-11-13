@@ -9,6 +9,8 @@ void main() {
     expect(cfg.enableLogging, isA<bool>());
     expect(cfg.apiTimeout, isA<int>());
     expect(cfg.maxRetries, isA<int>());
+    expect(cfg.mapboxAccessToken, isA<String>());
+    expect(cfg.mapboxAccessToken.isNotEmpty, true);
   });
 
   test('Valores esperados dev', () {
@@ -17,5 +19,6 @@ void main() {
     expect(cfg.apiTimeout, 5000);
     expect(cfg.maxRetries, 3);
     expect(cfg.enableLogging, true);
+    expect(cfg.mapboxAccessToken.isNotEmpty, true);
   });
 }
