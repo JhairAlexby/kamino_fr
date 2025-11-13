@@ -48,3 +48,6 @@ app.*.map.json
 config.*.json
 !config.dev.template.json
 !config.prod.template.json
+
+# Trae IDE workspace
+.trae/
