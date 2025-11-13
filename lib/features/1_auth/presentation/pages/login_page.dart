@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/features/1_auth/presentation/provider/login_provider.dart';
+import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_header.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_input.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_primary_button.dart';
@@ -20,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => LoginProvider(),
+      create: (ctx) => LoginProvider(ctx.read<AuthRepository>()),
       child: Scaffold(
         backgroundColor: AppTheme.textBlack,
         body: SafeArea(
@@ -74,8 +75,9 @@ class _LoginPageState extends State<LoginPage> {
                                     if (value == null || value.trim().isEmpty) {
                                       return 'El correo es obligatorio';
                                     }
-                                    if (!RegExp(r"^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}")
-                                        .hasMatch(value.trim())) {
+                                    final email = value.trim();
+                                    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                                    if (!emailRegex.hasMatch(email)) {
                                       return 'Ingresa un correo válido';
                                     }
                                     return null;
@@ -97,6 +99,30 @@ class _LoginPageState extends State<LoginPage> {
                                     return null;
                                   },
                                 ),
+                                if (provider.statusMessage != null) ...[
+                                  SizedBox(height: gapS),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: provider.statusIsError
+                                          ? Colors.red.withOpacity(0.15)
+                                          : AppTheme.primaryMint.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: provider.statusIsError ? Colors.red : AppTheme.primaryMint,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      provider.statusMessage!,
+                                      style: TextStyle(
+                                        color: provider.statusIsError ? Colors.red : AppTheme.primaryMint,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

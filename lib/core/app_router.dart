@@ -51,9 +51,25 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
 class AppState extends ChangeNotifier {
   AppRoutePath _current = AppRoutePath.welcome;
   AppRoutePath get currentPath => _current;
+  bool _isAuthenticated = false;
+  bool get isAuthenticated => _isAuthenticated;
 
   void setPath(AppRoutePath path) {
-    _current = path;
+    if (path.isHome && !_isAuthenticated) {
+      _current = AppRoutePath.login;
+    } else {
+      _current = path;
+    }
+    notifyListeners();
+  }
+
+  void login() {
+    _isAuthenticated = true;
+    notifyListeners();
+  }
+
+  void logout() {
+    _isAuthenticated = false;
     notifyListeners();
   }
 }
