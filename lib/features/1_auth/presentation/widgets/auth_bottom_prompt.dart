@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 
 class AuthBottomPrompt extends StatelessWidget {
@@ -17,25 +18,24 @@ class AuthBottomPrompt extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.center,
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 4.0,
-        children: [
-          Text(
-            text,
-            style: const TextStyle(color: Colors.white),
-          ),
-          TextButton(
-            onPressed: onTap,
-            child: Text(
-              actionText,
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: text,
+              style: const TextStyle(color: Colors.white),
+            ),
+            TextSpan(
+              text: actionText,
               style: const TextStyle(
                 color: AppTheme.primaryMint,
                 fontWeight: FontWeight.w700,
               ),
+              recognizer: TapGestureRecognizer()..onTap = onTap,
             ),
-          ),
-        ],
+          ],
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }

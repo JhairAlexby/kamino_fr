@@ -28,55 +28,62 @@ class WelcomePage extends StatelessWidget {
               final size = MediaQuery.of(context).size;
               final insets = MediaQuery.of(context).padding;
               final viewportHeight = size.height - insets.top - insets.bottom;
-              final gapTop = (viewportHeight * 0.1).clamp(48.0, 100.0) as double;
-              final gapL = (viewportHeight * 0.05).clamp(24.0, 60.0) as double;
-              return SingleChildScrollView(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 600),
-                      child: SizedBox(
-                        height: viewportHeight,
-                        child: Column(
-                          children: [
-                            SizedBox(height: gapTop),
-                            const AuthLogo(size: 150),
-                            SizedBox(height: gapL),
-                            RichText(
-                              textAlign: TextAlign.center,
-                              text: const TextSpan(
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                                children: [
-                                  TextSpan(text: 'Conecta. '),
-                                  TextSpan(
-                                    text: 'Descubre.',
-                                    style: TextStyle(color: AppTheme.primaryMint),
+              final gapTop = (viewportHeight * 0.08).clamp(24.0, 64.0) as double;
+              final gapL = (viewportHeight * 0.04).clamp(16.0, 40.0) as double;
+              final small = viewportHeight < 640;
+              final titleSize = small ? 24.0 : 28.0;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: SizedBox(
+                      height: viewportHeight,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            children: [
+                              SizedBox(height: gapTop),
+                              const AuthLogo(size: 120),
+                              SizedBox(height: gapL),
+                              RichText(
+                                textAlign: TextAlign.center,
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    fontSize: titleSize,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
                                   ),
-                                  TextSpan(text: ' Avanza.'),
-                                ],
+                                  children: const [
+                                    TextSpan(text: 'Conecta. '),
+                                    TextSpan(
+                                      text: 'Descubre.',
+                                      style: TextStyle(color: AppTheme.primaryMint),
+                                    ),
+                                    TextSpan(text: ' Avanza.'),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const Spacer(),
-                            AuthPrimaryButton(
-                              text: 'Registrate',
-                              isLoading: false,
-                              onPressed: () => provider.navigateToRegister(context),
-                            ),
-                            const SizedBox(height: 20),
-                            AuthBottomPrompt(
-                              text: 'Ya tienes cuenta? ',
-                              actionText: 'Inicia Sesion',
-                              onTap: () => provider.navigateToLogin(context),
-                            ),
-                            SizedBox(height: gapL),
-                          ],
-                        ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              AuthPrimaryButton(
+                                text: 'Registrate',
+                                isLoading: false,
+                                onPressed: () => provider.navigateToRegister(context),
+                              ),
+                              const SizedBox(height: 16),
+                              AuthBottomPrompt(
+                                text: 'Ya tienes cuenta? ',
+                                actionText: 'Inicia Sesion',
+                                onTap: () => provider.navigateToLogin(context),
+                              ),
+                              SizedBox(height: gapL),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
