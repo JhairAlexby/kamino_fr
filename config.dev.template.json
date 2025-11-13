@@ -1,0 +1,9 @@
+{
+  "API_BASE_URL": "https://<dev-host>",
+  "API_KEY": "CHANGE_ME",
+  "ENABLE_LOGGING": "true",
+  "API_TIMEOUT": "5000",
+  "ENVIRONMENT": "development",
+  "DEBUG_MODE": "true",
+  "MAX_RETRIES": "3"
+}

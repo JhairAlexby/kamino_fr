@@ -1,0 +1,9 @@
+{
+  "API_BASE_URL": "https://<prod-host>",
+  "API_KEY": "CHANGE_ME",
+  "ENABLE_LOGGING": "false",
+  "API_TIMEOUT": "10000",
+  "ENVIRONMENT": "production",
+  "DEBUG_MODE": "false",
+  "MAX_RETRIES": "5"
+}
