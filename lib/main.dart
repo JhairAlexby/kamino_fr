@@ -8,6 +8,10 @@ import 'package:kamino_fr/features/1_auth/presentation/pages/welcome_page.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/core/app_router.dart';
 import 'config/environment_config.dart';
+import 'package:kamino_fr/core/auth/token_storage.dart';
+import 'package:kamino_fr/core/network/http_client.dart';
+import 'package:kamino_fr/features/1_auth/data/auth_api.dart';
+import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 
 void main() {
   final config = EnvironmentConfig.load();
@@ -34,8 +38,15 @@ class MyApp extends StatelessWidget {
       );
 
     if (config != null) {
-      app = Provider<EnvironmentConfig>.value(
-        value: config!,
+      final storage = SecureTokenStorage();
+      final http = HttpClient(config!, storage);
+      final authApi = AuthApiImpl(http.dio);
+      final repo = AuthRepository(api: authApi, storage: storage);
+      app = MultiProvider(
+        providers: [
+          Provider<EnvironmentConfig>.value(value: config!),
+          Provider<AuthRepository>.value(value: repo),
+        ],
         child: app,
       );
     }
