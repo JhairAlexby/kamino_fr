@@ -8,6 +8,7 @@ import 'package:kamino_fr/config/environment_config.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/home_provider.dart';
 import '../widgets/generation_modal.dart';
+import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -88,7 +89,9 @@ class _HomePageState extends State<HomePage> {
             backgroundColor: AppTheme.textBlack,
             body: SafeArea(
               bottom: false,
-              child: Stack(
+              child: vm.currentTab == 2
+                  ? const _ProfileContentWrapper()
+                  : Stack(
                 children: [
                   Positioned.fill(
                     child: MapWidget(
@@ -214,6 +217,14 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
+  }
+}
+
+class _ProfileContentWrapper extends StatelessWidget {
+  const _ProfileContentWrapper();
+  @override
+  Widget build(BuildContext context) {
+    return const ProfilePage();
   }
 }
 
