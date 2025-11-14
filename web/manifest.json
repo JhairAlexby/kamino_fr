@@ -1,6 +1,6 @@
 {
-    "name": "kamino_fr",
-    "short_name": "kamino_fr",
+    "name": "Kamino",
+    "short_name": "Kamino",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
