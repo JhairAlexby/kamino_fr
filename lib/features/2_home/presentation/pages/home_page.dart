@@ -95,11 +95,12 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Positioned.fill(
                     child: MapWidget(
+                      styleUri: MapboxStyles.STANDARD,
                       cameraOptions: CameraOptions(
                         center: Point(coordinates: Position(-98.0, 39.5)),
-                        zoom: 2,
+                        zoom: 14,
                         bearing: 0,
-                        pitch: 0,
+                        pitch: 60,
                       ),
                       onMapCreated: (controller) {
                         _mapboxMap = controller;
@@ -109,6 +110,21 @@ class _HomePageState extends State<HomePage> {
                       onStyleLoadedListener: (event) async {
                         _styleLoaded = true;
                         await _applyLocationSettings();
+                        if (_mapboxMap != null) {
+                          final style = _mapboxMap!.style;
+                          await style.addSource(
+                            RasterDemSource(
+                              id: 'mapbox-dem',
+                              url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                              tileSize: 512,
+                              maxzoom: 14,
+                            ),
+                          );
+                          await style.setStyleTerrainProperty('source', 'mapbox-dem');
+                          await style.setStyleTerrainProperty('exaggeration', 1.0);
+                          await style.setStyleImportConfigProperty('basemap', 'lightPreset', 'dusk');
+                          await style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', true);
+                        }
                       },
                     ),
                   ),
