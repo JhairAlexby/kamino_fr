@@ -9,13 +9,13 @@ class HeaderWidget extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   const HeaderWidget({
-    Key? key,
+    super.key,
     required this.animationController,
     required this.slideAnimation,
     required this.title,
     required this.subtitle,
     required this.padding,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +33,8 @@ class HeaderWidget extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   AppTheme.primaryMint,
-                  AppTheme.primaryMint.withOpacity(0.8),
-                  AppTheme.primaryMint.withOpacity(0.9),
+                  AppTheme.primaryMint.withValues(alpha: 0.8),
+                  AppTheme.primaryMint.withValues(alpha: 0.9),
                 ],
               ),
               borderRadius: const BorderRadius.only(
@@ -43,7 +43,7 @@ class HeaderWidget extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryMint.withOpacity(0.3),
+                  color: AppTheme.primaryMint.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),

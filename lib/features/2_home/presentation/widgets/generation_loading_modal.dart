@@ -15,7 +15,7 @@ class GenerationLoadingModal extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -73,7 +73,7 @@ class GenerationLoadingModal extends StatelessWidget {
                   color: AppTheme.primaryMintDark,
                   shadows: [
                     Shadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       offset: const Offset(0, 2),
                       blurRadius: 4,
                     ),

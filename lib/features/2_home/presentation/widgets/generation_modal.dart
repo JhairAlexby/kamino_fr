@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_theme.dart';
-import 'generation_loading_modal.dart';
 
 class GenerationModal extends StatefulWidget {
   const GenerationModal({super.key});
@@ -25,7 +24,7 @@ class _GenerationModalState extends State<GenerationModal> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -136,7 +135,7 @@ class _GenerationModalState extends State<GenerationModal> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: BorderSide(
-              color: isSelected ? AppTheme.primaryMintDark : AppTheme.primaryMint.withOpacity(0.35),
+              color: isSelected ? AppTheme.primaryMintDark : AppTheme.primaryMint.withValues(alpha: 0.35),
             ),
           ),
         );
@@ -150,10 +149,10 @@ class _GenerationModalState extends State<GenerationModal> {
         activeTrackColor: AppTheme.primaryMint,
         inactiveTrackColor: AppTheme.lightMintBackground,
         thumbColor: AppTheme.primaryMintDark,
-        overlayColor: AppTheme.primaryMint.withOpacity(0.2),
+        overlayColor: AppTheme.primaryMint.withValues(alpha: 0.2),
         trackHeight: 4,
         activeTickMarkColor: AppTheme.primaryMintDark,
-        inactiveTickMarkColor: AppTheme.primaryMint.withOpacity(0.4),
+        inactiveTickMarkColor: AppTheme.primaryMint.withValues(alpha: 0.4),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

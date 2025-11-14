@@ -7,11 +7,11 @@ class AuthPrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   const AuthPrimaryButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.isLoading,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/welcome_page.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/register_page.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/login_page.dart';
@@ -23,9 +22,7 @@ class AppRoutePath {
 class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
   @override
   Future<AppRoutePath> parseRouteInformation(RouteInformation routeInformation) async {
-    // Si no viene location, asumimos /welcome
-    final loc = routeInformation.location ?? '/welcome';
-    final uri = Uri.parse(loc);
+    final uri = routeInformation.uri;
     final first = '/${uri.pathSegments.isEmpty ? '' : uri.pathSegments.first}';
     switch (first) {
       case '/register':
@@ -44,7 +41,7 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
 
   @override
   RouteInformation restoreRouteInformation(AppRoutePath configuration) {
-    return RouteInformation(location: configuration.location);
+    return RouteInformation(uri: Uri.parse(configuration.location));
   }
 }
 

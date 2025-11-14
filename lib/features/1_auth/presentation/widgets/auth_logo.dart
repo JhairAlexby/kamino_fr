@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AuthLogo extends StatelessWidget {
   final double size;
 
-  const AuthLogo({Key? key, this.size = 48}) : super(key: key);
+  const AuthLogo({super.key, this.size = 48});
 
   @override
   Widget build(BuildContext context) {

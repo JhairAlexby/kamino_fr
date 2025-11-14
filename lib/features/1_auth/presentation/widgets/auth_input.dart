@@ -10,14 +10,14 @@ class AuthInput extends StatelessWidget {
   final VoidCallback? onToggleObscure;
 
   const AuthInput({
-    Key? key,
+    super.key,
     required this.controller,
     required this.hintText,
     this.keyboardType = TextInputType.text,
     this.validator,
     this.obscureText = false,
     this.onToggleObscure,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class AuthInput extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
-        fillColor: AppTheme.background.withOpacity(0.9),
+        fillColor: AppTheme.background.withValues(alpha: 0.9),
         suffixIcon: onToggleObscure != null
             ? IconButton(
                 icon: Icon(

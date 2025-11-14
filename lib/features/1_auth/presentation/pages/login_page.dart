@@ -11,7 +11,7 @@ import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_logo.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_bottom_prompt.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -29,11 +29,11 @@ class _LoginPageState extends State<LoginPage> {
             builder: (context, provider, child) {
               final isLoading = provider.isLoading;
               final size = MediaQuery.of(context).size;
-              final gapXL = (size.height * 0.06).clamp(32.0, 60.0) as double;
-              final gapL = (size.height * 0.04).clamp(20.0, 40.0) as double;
-              final gapM = (size.height * 0.025).clamp(14.0, 28.0) as double;
-              final gapS = (size.height * 0.018).clamp(10.0, 22.0) as double;
-              final gapXS = (size.height * 0.012).clamp(6.0, 16.0) as double;
+              final gapXL = (size.height * 0.06).clamp(32.0, 60.0).toDouble();
+              final gapL = (size.height * 0.04).clamp(20.0, 40.0).toDouble();
+              final gapM = (size.height * 0.025).clamp(14.0, 28.0).toDouble();
+              final gapS = (size.height * 0.018).clamp(10.0, 22.0).toDouble();
+              final gapXS = (size.height * 0.012).clamp(6.0, 16.0).toDouble();
               return SingleChildScrollView(
                 padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).viewInsets.bottom + 20,
@@ -106,8 +106,8 @@ class _LoginPageState extends State<LoginPage> {
                                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                                     decoration: BoxDecoration(
                                       color: provider.statusIsError
-                                          ? Colors.red.withOpacity(0.15)
-                                          : AppTheme.primaryMint.withOpacity(0.15),
+                                          ? Colors.red.withValues(alpha: 0.15)
+                                          : AppTheme.primaryMint.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
                                         color: provider.statusIsError ? Colors.red : AppTheme.primaryMint,

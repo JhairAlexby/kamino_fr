@@ -23,6 +23,20 @@ class _FakeAuthApi implements AuthApi {
       refreshToken: 'R',
     );
   }
+
+  @override
+  Future<User> register({required String firstName, required String lastName, required String email, required String password}) async {
+    return User(
+      id: 'new-id',
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+      role: 'USER',
+      isActive: true,
+      createdAt: DateTime.parse('2025-11-13T16:37:03.821Z'),
+      updatedAt: DateTime.parse('2025-11-13T16:37:03.821Z'),
+    );
+  }
 }
 
 class _MemoryTokenStorage implements TokenStorage {

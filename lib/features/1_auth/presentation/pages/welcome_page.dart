@@ -28,8 +28,8 @@ class WelcomePage extends StatelessWidget {
               final size = MediaQuery.of(context).size;
               final insets = MediaQuery.of(context).padding;
               final viewportHeight = size.height - insets.top - insets.bottom;
-              final gapTop = (viewportHeight * 0.08).clamp(24.0, 64.0) as double;
-              final gapL = (viewportHeight * 0.04).clamp(16.0, 40.0) as double;
+              final gapTop = (viewportHeight * 0.08).clamp(24.0, 64.0).toDouble();
+              final gapL = (viewportHeight * 0.04).clamp(16.0, 40.0).toDouble();
               final small = viewportHeight < 640;
               final titleSize = small ? 24.0 : 28.0;
               return Padding(

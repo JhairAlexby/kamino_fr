@@ -55,8 +55,8 @@ class _AuthHeaderState extends State<AuthHeader> with TickerProviderStateMixin {
             end: Alignment.bottomRight,
             colors: [
               AppTheme.primaryMint,
-              AppTheme.primaryMint.withOpacity(0.8),
-              AppTheme.primaryMint.withOpacity(0.9),
+              AppTheme.primaryMint.withValues(alpha: 0.8),
+              AppTheme.primaryMint.withValues(alpha: 0.9),
             ],
           ),
           borderRadius: const BorderRadius.only(
@@ -65,7 +65,7 @@ class _AuthHeaderState extends State<AuthHeader> with TickerProviderStateMixin {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryMint.withOpacity(0.3),
+              color: AppTheme.primaryMint.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),

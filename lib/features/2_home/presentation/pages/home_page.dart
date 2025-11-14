@@ -4,7 +4,6 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'dart:async';
-import 'package:kamino_fr/config/environment_config.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/home_provider.dart';
 import '../widgets/generation_modal.dart';
@@ -19,11 +18,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   MapboxMap? _mapboxMap;
-  bool _styleLoaded = false;
   StreamSubscription<geo.Position>? _posSub;
-  bool _followUser = true;
+  final bool _followUser = true;
   DateTime? _lastCameraUpdate;
-  geo.Position? _lastGeoPos;
 
   Future<void> _enableUserLocation() async {
     final status = await Permission.locationWhenInUse.request();
@@ -52,7 +49,6 @@ class _HomePageState extends State<HomePage> {
     try {
       final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
       final pos = Position(geoPos.longitude, geoPos.latitude);
-      _lastGeoPos = geoPos;
       await _mapboxMap?.setCamera(
         CameraOptions(center: Point(coordinates: pos), zoom: 14),
       );
@@ -64,7 +60,6 @@ class _HomePageState extends State<HomePage> {
     _posSub = geo.Geolocator.getPositionStream(locationSettings: const geo.LocationSettings(accuracy: geo.LocationAccuracy.best, distanceFilter: 10))
         .listen((geoPos) async {
       if (!_followUser) return;
-      _lastGeoPos = geoPos;
       final now = DateTime.now();
       if (_lastCameraUpdate != null && now.difference(_lastCameraUpdate!).inMilliseconds < 1000) return;
       _lastCameraUpdate = now;
@@ -108,7 +103,6 @@ class _HomePageState extends State<HomePage> {
                         _startFollow();
                       },
                       onStyleLoadedListener: (event) async {
-                        _styleLoaded = true;
                         await _applyLocationSettings();
                         if (_mapboxMap != null) {
                           final style = _mapboxMap!.style;
@@ -177,7 +171,7 @@ class _HomePageState extends State<HomePage> {
               data: NavigationBarThemeData(
                 height: 76,
                 backgroundColor: AppTheme.lightMintBackground,
-                indicatorColor: AppTheme.primaryMint.withOpacity(0.20),
+                indicatorColor: AppTheme.primaryMint.withValues(alpha: 0.20),
                 labelTextStyle: MaterialStateProperty.resolveWith((states) {
                   final selected = states.contains(MaterialState.selected);
                   return TextStyle(

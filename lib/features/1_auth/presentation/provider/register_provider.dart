@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
+import 'package:kamino_fr/core/app_router.dart';
+
 class RegisterProvider extends ChangeNotifier {
-  
+  RegisterProvider(this._repo);
+
+  final AuthRepository _repo;
+
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-  final nameController = TextEditingController();
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final confirmPasswordController = TextEditingController(); 
+  final confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -14,7 +22,7 @@ class RegisterProvider extends ChangeNotifier {
   bool _obscurePassword = true;
   bool get obscurePassword => _obscurePassword;
 
-  bool _obscureConfirmPassword = true; 
+  bool _obscureConfirmPassword = true;
   bool get obscureConfirmPassword => _obscureConfirmPassword;
 
   void togglePasswordVisibility() {
@@ -27,22 +35,33 @@ class RegisterProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> register() async {
+  Future<void> register(BuildContext context) async {
     if (!formKey.currentState!.validate()) {
-      return; 
+      return;
     }
 
     _isLoading = true;
     notifyListeners();
-    await Future.delayed(const Duration(seconds: 2));
-
-    _isLoading = false;
-    notifyListeners();
+    try {
+      final firstName = firstNameController.text.trim();
+      final lastName = lastNameController.text.trim();
+      final email = emailController.text.trim();
+      final password = passwordController.text;
+      await _repo.register(firstName: firstName, lastName: lastName, email: email, password: password);
+      _isLoading = false;
+      notifyListeners();
+      if (!context.mounted) return;
+      context.read<AppState>().setPath(AppRoutePath.login);
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   @override
   void dispose() {
-    nameController.dispose(); 
+    firstNameController.dispose();
+    lastNameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();

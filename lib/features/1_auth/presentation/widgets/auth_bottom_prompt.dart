@@ -8,11 +8,11 @@ class AuthBottomPrompt extends StatelessWidget {
   final VoidCallback onTap;
 
   const AuthBottomPrompt({
-    Key? key,
+    super.key,
     required this.text,
     required this.actionText,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
