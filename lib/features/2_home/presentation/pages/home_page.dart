@@ -4,6 +4,8 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/home_provider.dart';
 import 'package:kamino_fr/config/environment_config.dart';
@@ -29,6 +31,7 @@ class _HomePageState extends State<HomePage> {
   final bool _followUser = true;
   DateTime? _lastCameraUpdate;
   PlacesLayerController? _placesLayer;
+  Uint8List? _userMarkerBytes;
   Future<void> _openNearbyParams(BuildContext ctx) async {
     final vm = Provider.of<NearbyPlacesProvider>(ctx, listen: false);
     final radiusCtrl = TextEditingController(text: vm.manualRadius.toString());
@@ -96,15 +99,35 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _loadUserMarker() async {
+    try {
+      final bytes = await rootBundle.load('assets/images/icons/markerUserMale.png');
+      _userMarkerBytes = bytes.buffer.asUint8List();
+    } catch (e) {
+      debugPrint('Error al cargar el marcador del usuario: $e');
+      _userMarkerBytes = null;
+    }
+  }
+
   Future<void> _applyLocationSettings() async {
     if (_mapboxMap == null) return;
+    
+    if (_userMarkerBytes == null) {
+      await _loadUserMarker();
+    }
+    
     await _mapboxMap!.location.updateSettings(
       LocationComponentSettings(
         enabled: true,
         pulsingEnabled: true,
-        puckBearingEnabled: true,
+        puckBearingEnabled: false,
         showAccuracyRing: true,
-        locationPuck: LocationPuck(),
+        locationPuck: LocationPuck(
+          locationPuck2D: DefaultLocationPuck2D(
+            topImage: _userMarkerBytes,
+            shadowImage: Uint8List.fromList([]),
+          ),
+        ),
       ),
     );
   }
