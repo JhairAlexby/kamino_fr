@@ -23,6 +23,7 @@ class ProfileProvider extends ChangeNotifier {
     if (token == null || token.isEmpty) {
       sessionExpired = true;
       notifyListeners();
+      await storage.clearTokens();
       appState.logout();
       appState.setPath(AppRoutePath.login);
       return;
@@ -37,6 +38,7 @@ class ProfileProvider extends ChangeNotifier {
       final code = e.response?.statusCode ?? 0;
       if (code == 401) {
         sessionExpired = true;
+        await storage.clearTokens();
         appState.logout();
         appState.setPath(AppRoutePath.login);
       } else {
