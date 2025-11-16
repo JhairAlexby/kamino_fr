@@ -233,6 +233,27 @@ class _HomePageState extends State<HomePage> {
                             final data = vm.places;
                             await _placesLayer?.updatePlaces(data);
                           });
+                          _placesLayer?.attachInteractions((place) {
+                            showModalBottomSheet(
+                              context: context,
+                              builder: (ctx) {
+                                return Container(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                                      const SizedBox(height: 6),
+                                      Text(place.category),
+                                      const SizedBox(height: 8),
+                                      Text(place.address),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          });
                           await _onCameraChanged(context);
                         }
                       },
