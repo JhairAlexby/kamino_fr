@@ -3,16 +3,19 @@ import 'package:kamino_fr/features/1_auth/presentation/pages/welcome_page.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/register_page.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/login_page.dart';
 import 'package:kamino_fr/features/2_home/presentation/pages/home_page.dart';
+import 'package:kamino_fr/features/0_splash/presentation/pages/splash_page.dart';
 
 class AppRoutePath {
   final String location;
   const AppRoutePath(this.location);
 
+  static const splash = AppRoutePath('/splash');
   static const welcome = AppRoutePath('/welcome');
   static const register = AppRoutePath('/register');
   static const login = AppRoutePath('/login');
   static const home = AppRoutePath('/home');
 
+  bool get isSplash => location == '/splash';
   bool get isWelcome => location == '/welcome';
   bool get isRegister => location == '/register';
   bool get isLogin => location == '/login';
@@ -25,6 +28,8 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
     final uri = routeInformation.uri;
     final first = '/${uri.pathSegments.isEmpty ? '' : uri.pathSegments.first}';
     switch (first) {
+      case '/splash':
+        return AppRoutePath.splash;
       case '/register':
         return AppRoutePath.register;
       case '/login':
@@ -32,10 +37,10 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
       case '/home':
         return AppRoutePath.home;
       case '/':
-        return AppRoutePath.welcome;
+        return AppRoutePath.splash;
       case '/welcome':
       default:
-        return AppRoutePath.welcome;
+        return AppRoutePath.splash;
     }
   }
 
@@ -46,7 +51,7 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
 }
 
 class AppState extends ChangeNotifier {
-  AppRoutePath _current = AppRoutePath.welcome;
+  AppRoutePath _current = AppRoutePath.splash;
   AppRoutePath get currentPath => _current;
   bool _isAuthenticated = false;
   bool get isAuthenticated => _isAuthenticated;
@@ -94,7 +99,14 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
   Widget build(BuildContext context) {
     final pages = <Page>[];
 
-    if (appState.currentPath.isWelcome) {
+    if (appState.currentPath.isSplash) {
+      pages.add(
+        MaterialPage(
+          key: const ValueKey('SplashPage'),
+          child: const SplashPage(),
+        ),
+      );
+    } else if (appState.currentPath.isWelcome) {
       pages.add(
         MaterialPage(
           key: const ValueKey('WelcomePage'),

@@ -18,23 +18,20 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key, this.config});
-
   final EnvironmentConfig? config;
-
   @override
   Widget build(BuildContext context) {
-    final appState = AppState(); // instancia compartida
+    final appState = AppState();
     Widget app = MaterialApp.router(
-        title: 'Kmino',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.getTheme(),
-        routerDelegate: AppRouterDelegate(appState),
-        routeInformationParser: AppRouteInformationParser(),
-        routeInformationProvider: PlatformRouteInformationProvider(
-          initialRouteInformation: RouteInformation(uri: Uri.parse('/welcome')),
-        ),
-      );
-
+      title: 'Kmino',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.getTheme(),
+      routerDelegate: AppRouterDelegate(appState),
+      routeInformationParser: AppRouteInformationParser(),
+      routeInformationProvider: PlatformRouteInformationProvider(
+        initialRouteInformation: RouteInformation(uri: Uri.parse('/splash')),
+      ),
+    );
     if (config != null) {
       final storage = SecureTokenStorage();
       final http = HttpClient(config!, storage);
@@ -48,10 +45,6 @@ class MyApp extends StatelessWidget {
         child: app,
       );
     }
-
-    return ChangeNotifierProvider.value(
-      value: appState,
-      child: app,
-    );
+    return ChangeNotifierProvider.value(value: appState, child: app);
   }
 }
