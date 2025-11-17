@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/app_theme.dart';
 import 'core/app_router.dart';
+import 'package:go_router/go_router.dart';
 import 'config/environment_config.dart';
 import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/core/network/http_client.dart';
@@ -22,15 +23,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = AppState();
+    final GoRouter router = buildRouter(appState);
     Widget app = MaterialApp.router(
       title: 'Kmino',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.getTheme(),
-      routerDelegate: AppRouterDelegate(appState),
-      routeInformationParser: AppRouteInformationParser(),
-      routeInformationProvider: PlatformRouteInformationProvider(
-        initialRouteInformation: RouteInformation(uri: Uri.parse('/splash')),
-      ),
+      routerConfig: router,
     );
     if (config != null) {
       final storage = SecureTokenStorage();

@@ -6,6 +6,7 @@ import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/core/network/http_client.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import 'package:kamino_fr/core/app_router.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_api.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_repository.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
@@ -50,7 +51,8 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: () {
-                      appState.setPath(AppRoutePath.login);
+                      appState.logout();
+                      context.go('/login');
                     },
                     child: const Text('Ir a iniciar sesión'),
                   ),

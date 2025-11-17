@@ -9,6 +9,7 @@ import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_input.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_primary_button.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_logo.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_bottom_prompt.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -148,13 +149,13 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: isLoading ? null : () => provider.login(context),
                           ),
                           SizedBox(height: gapL),
-                          AuthBottomPrompt(
-                            text: 'No tienes cuenta? ',
-                            actionText: 'Registrate',
-                            onTap: () {
-                              context.read<AppState>().setPath(AppRoutePath.register);
-                            },
-                          ),
+                              AuthBottomPrompt(
+                                text: 'No tienes cuenta? ',
+                                actionText: 'Registrate',
+                                onTap: () {
+                                  context.push('/register');
+                                },
+                              ),
                           SizedBox(height: gapS),
                           const Align(
                             alignment: Alignment.center,

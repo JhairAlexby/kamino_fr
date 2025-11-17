@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../provider/register_provider.dart';
-import 'package:kamino_fr/core/app_router.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_header.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_input.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_primary_button.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_logo.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_bottom_prompt.dart';
+import 'package:go_router/go_router.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -162,7 +162,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 text: 'Ya tienes cuenta? ',
                                 actionText: 'Inicia Sesion',
                                 onTap: () {
-                                  context.read<AppState>().setPath(AppRoutePath.login);
+                                  context.push('/login');
                                 },
                               ),
                               SizedBox(height: gapS),
