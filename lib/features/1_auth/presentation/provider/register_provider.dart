@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
-import 'package:kamino_fr/core/app_router.dart';
+import 'package:go_router/go_router.dart';
 
 class RegisterProvider extends ChangeNotifier {
   RegisterProvider(this._repo);
@@ -51,7 +51,7 @@ class RegisterProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       if (!context.mounted) return;
-      context.read<AppState>().setPath(AppRoutePath.login);
+      context.go('/login');
     } catch (e) {
       _isLoading = false;
       notifyListeners();

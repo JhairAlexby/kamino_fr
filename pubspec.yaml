@@ -40,6 +40,7 @@ dependencies:
   mapbox_maps_flutter: ^2.0.0
   permission_handler: ^11.3.1
   geolocator: ^10.1.0
+  go_router: ^13.2.1
 
 dev_dependencies:
   flutter_test:
@@ -79,6 +80,8 @@ flutter:
   assets:
     - assets/images/
     - assets/images/icons/markerUserMale.png
+    - assets/images/3dmapa.png
+    - assets/images/Welcome_img.png
     
   #   - images/a_dot_ham.jpeg
 

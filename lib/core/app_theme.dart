@@ -6,7 +6,7 @@ class AppTheme {
   static const Color primaryMint = Color(0xFF85E6C0);
   static const Color primaryMintDark = Color(0xFF6BB39B);
   static const Color background = Color(0xFFF7F4E8); 
-  static const Color textBlack = Color(0xFF0B0B0D);
+  static const Color textBlack = Color(0xFF181A20);
   static const Color lightMintBackground = Color(0xFFDAF3EA);
 
   static ThemeData getTheme() {

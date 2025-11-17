@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kamino_fr/config/environment_config.dart';
 import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/core/network/http_client.dart';
@@ -50,7 +50,7 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: () {
-                      appState.setPath(AppRoutePath.login);
+                      context.go('/login');
                     },
                     child: const Text('Ir a iniciar sesión'),
                   ),
