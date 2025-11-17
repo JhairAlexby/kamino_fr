@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 import 'package:go_router/go_router.dart';
 
