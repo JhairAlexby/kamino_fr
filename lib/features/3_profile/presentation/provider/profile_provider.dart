@@ -25,7 +25,6 @@ class ProfileProvider extends ChangeNotifier {
       notifyListeners();
       await storage.clearTokens();
       appState.logout();
-      appState.setPath(AppRoutePath.login);
       return;
     }
     isLoading = true;
@@ -40,7 +39,6 @@ class ProfileProvider extends ChangeNotifier {
         sessionExpired = true;
         await storage.clearTokens();
         appState.logout();
-        appState.setPath(AppRoutePath.login);
       } else {
         errorMessage = 'No se pudo cargar el perfil';
       }

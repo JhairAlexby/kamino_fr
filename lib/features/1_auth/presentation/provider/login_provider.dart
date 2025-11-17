@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_router.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 
 class LoginProvider extends ChangeNotifier {
@@ -49,7 +50,7 @@ class LoginProvider extends ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 1200));
       if (!context.mounted) return;
       context.read<AppState>().login();
-      context.read<AppState>().setPath(AppRoutePath.home);
+      context.go('/home');
     } catch (e) {
       _isLoading = false;
       _statusMessage = 'No se pudo iniciar sesión';
