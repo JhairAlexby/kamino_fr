@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kamino_fr/core/app_router.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 
 class LoginProvider extends ChangeNotifier {

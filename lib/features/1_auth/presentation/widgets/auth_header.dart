@@ -4,12 +4,14 @@ import 'package:kamino_fr/core/app_theme.dart';
 class AuthHeader extends StatefulWidget {
   final String title;
   final String subtitle;
+  final bool fromTop;
 
   const AuthHeader({
-    Key? key,
+    super.key,
     required this.title,
     required this.subtitle,
-  }) : super(key: key);
+    this.fromTop = true,
+  });
 
   @override
   State<AuthHeader> createState() => _AuthHeaderState();
@@ -27,7 +29,7 @@ class _AuthHeaderState extends State<AuthHeader> with TickerProviderStateMixin {
       vsync: this,
     );
     _slide = Tween<Offset>(
-      begin: const Offset(-1.5, 0),
+      begin: widget.fromTop ? const Offset(0, -1.5) : const Offset(-1.5, 0),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _controller,
