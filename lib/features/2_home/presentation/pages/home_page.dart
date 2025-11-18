@@ -6,6 +6,8 @@ import 'package:geolocator/geolocator.dart' as geo;
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:dio/dio.dart';
+import 'dart:math' as math;
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/home_provider.dart';
 import 'package:kamino_fr/config/environment_config.dart';
@@ -32,6 +34,12 @@ class _HomePageState extends State<HomePage> {
   DateTime? _lastCameraUpdate;
   PlacesLayerController? _placesLayer;
   Uint8List? _userMarkerBytes;
+  PolylineAnnotationManager? _routeManager;
+  List<Position> _routeCoords = [];
+  String _etaText = '';
+  String _navMode = 'driving';
+  DateTime? _lastRouteRecalc;
+  Point? _currentDestination;
   Future<void> _openNearbyParams(BuildContext ctx) async {
     final vm = Provider.of<NearbyPlacesProvider>(ctx, listen: false);
     final radiusCtrl = TextEditingController(text: vm.manualRadius.toString());
@@ -152,6 +160,23 @@ class _HomePageState extends State<HomePage> {
       _lastCameraUpdate = now;
       final pos = Position(geoPos.longitude, geoPos.latitude);
       await _mapboxMap?.setCamera(CameraOptions(center: Point(coordinates: pos)));
+      if (_routeCoords.isNotEmpty) {
+        final off = _distanceToRouteMeters(geoPos.latitude, geoPos.longitude, _routeCoords);
+        final shouldRecalc = off > 30.0 && (_lastRouteRecalc == null || now.difference(_lastRouteRecalc!).inMilliseconds > 3000);
+        if (shouldRecalc && _currentDestination != null) {
+          _lastRouteRecalc = now;
+          await _calculateAndShowRoute(
+            latOrigin: geoPos.latitude,
+            lonOrigin: geoPos.longitude,
+            latDest: _currentDestination!.coordinates.lat.toDouble(),
+            lonDest: _currentDestination!.coordinates.lng.toDouble(),
+            mode: _navMode,
+          );
+        } else if (_currentDestination != null) {
+          final remaining = _remainingDistanceMeters(geoPos.latitude, geoPos.longitude, _routeCoords);
+          _updateEtaText(remaining, _navMode);
+        }
+      }
     });
   }
 
@@ -180,6 +205,185 @@ class _HomePageState extends State<HomePage> {
       radius: vm.useManual ? vm.manualRadius : radius,
       limit: vm.manualLimit,
     );
+  }
+
+  Future<void> _confirmDestination(BuildContext ctx, double lat, double lon) async {
+    String selectedMode = _navMode;
+    final ok = await showDialog<bool>(
+      context: ctx,
+      builder: (dCtx) {
+        return AlertDialog(
+          title: const Text('Confirmación'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('¿Deseas ir a esta ubicación?'),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Text('Modo: '),
+                  const SizedBox(width: 8),
+                  StatefulBuilder(
+                    builder: (c, setState) {
+                      return DropdownButton<String>(
+                        value: selectedMode,
+                        items: const [
+                          DropdownMenuItem(value: 'driving', child: Text('Conducción')),
+                          DropdownMenuItem(value: 'walking', child: Text('Caminando')),
+                          DropdownMenuItem(value: 'cycling', child: Text('Bicicleta')),
+                        ],
+                        onChanged: (v) { if (v != null) { setState(() { selectedMode = v; }); } },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () { Navigator.of(dCtx).pop(false); }, child: const Text('Cancelar')),
+            ElevatedButton(onPressed: () { Navigator.of(dCtx).pop(true); }, child: const Text('Ir')),
+          ],
+        );
+      },
+    );
+    if (ok == true) {
+      _navMode = selectedMode;
+      _currentDestination = Point(coordinates: Position(lon, lat));
+      final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+      await _calculateAndShowRoute(latOrigin: geoPos.latitude, lonOrigin: geoPos.longitude, latDest: lat, lonDest: lon, mode: _navMode);
+    }
+  }
+
+  Future<void> _calculateAndShowRoute({required double latOrigin, required double lonOrigin, required double latDest, required double lonDest, required String mode}) async {
+    try {
+      final cfg = Provider.of<EnvironmentConfig>(context, listen: false);
+      final url = 'https://api.mapbox.com/directions/v5/mapbox/$mode/$lonOrigin,$latOrigin;$lonDest,$latDest?geometries=geojson&access_token=${cfg.mapboxAccessToken}';
+      final resp = await Dio().get(url);
+      final data = resp.data as Map<String, dynamic>;
+      final routes = (data['routes'] as List?) ?? [];
+      if (routes.isEmpty) return;
+      final r0 = routes.first as Map<String, dynamic>;
+      final geometry = r0['geometry'] as Map<String, dynamic>;
+      final coords = (geometry['coordinates'] as List).cast<List>();
+      _routeCoords = coords.map((c) => Position((c[0] as num).toDouble(), (c[1] as num).toDouble())).toList();
+      await _drawRoute(_routeCoords);
+      final distance = (r0['distance'] as num?)?.toDouble() ?? _pathLengthMeters(_routeCoords);
+      _updateEtaText(distance, mode);
+    } catch (_) {}
+  }
+
+  Future<void> _drawRoute(List<Position> coords) async {
+    if (_routeManager == null) return;
+    await _routeManager!.deleteAll();
+    if (coords.length < 2) return;
+    final ls = LineString(coordinates: coords);
+    final opt = PolylineAnnotationOptions(
+      geometry: ls,
+      lineColor: Colors.cyan.value,
+      lineWidth: 6,
+      lineOpacity: 0.8,
+    );
+    await _routeManager!.create(opt);
+  }
+
+  void _updateEtaText(double distanceMeters, String mode) {
+    final speed = _avgSpeedMetersPerSecond(mode);
+    if (speed <= 0) { setState(() { _etaText = ''; }); return; }
+    final seconds = (distanceMeters / speed).round();
+    final d = Duration(seconds: seconds);
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    final txt = h > 0 ? '${h}h ${m}m' : (m > 0 ? '${m}m ${s}s' : '${s}s');
+    setState(() { _etaText = txt; });
+  }
+
+  double _avgSpeedMetersPerSecond(String mode) {
+    switch (mode) {
+      case 'walking': return 1.4;
+      case 'cycling': return 4.16;
+      case 'driving':
+      default: return 13.9;
+    }
+  }
+
+  double _pathLengthMeters(List<Position> coords) {
+    if (coords.length < 2) return 0.0;
+    double sum = 0.0;
+    for (int i = 1; i < coords.length; i++) {
+      sum += _haversine(
+        coords[i - 1].lat.toDouble(),
+        coords[i - 1].lng.toDouble(),
+        coords[i].lat.toDouble(),
+        coords[i].lng.toDouble(),
+      );
+    }
+    return sum;
+  }
+
+  double _haversine(double lat1, double lon1, double lat2, double lon2) {
+    const double R = 6371000.0;
+    final dLat = _deg2rad(lat2 - lat1);
+    final dLon = _deg2rad(lon2 - lon1);
+    final a = (math.sin(dLat / 2) * math.sin(dLat / 2)) + math.cos(_deg2rad(lat1)) * math.cos(_deg2rad(lat2)) * (math.sin(dLon / 2) * math.sin(dLon / 2));
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return R * c;
+  }
+
+  double _deg2rad(double d) => d * 0.017453292519943295;
+
+  double _distanceToRouteMeters(double lat, double lon, List<Position> path) {
+    if (path.length < 2) return double.infinity;
+    double minD = double.infinity;
+    for (int i = 1; i < path.length; i++) {
+      final aLat = path[i - 1].lat.toDouble();
+      final aLon = path[i - 1].lng.toDouble();
+      final bLat = path[i].lat.toDouble();
+      final bLon = path[i].lng.toDouble();
+      final d = _pointToSegmentDistanceMeters(lat, lon, aLat, aLon, bLat, bLon);
+      if (d < minD) minD = d;
+    }
+    return minD;
+  }
+
+  double _pointToSegmentDistanceMeters(double pLat, double pLon, double aLat, double aLon, double bLat, double bLon) {
+    final ap = _vectorMeters(aLat, aLon, pLat, pLon);
+    final ab = _vectorMeters(aLat, aLon, bLat, bLon);
+    final abLen2 = ab.dx * ab.dx + ab.dy * ab.dy;
+    if (abLen2 == 0) return _haversine(pLat, pLon, aLat, aLon);
+    final t = ((ap.dx * ab.dx) + (ap.dy * ab.dy)) / abLen2;
+    final clampedT = t.clamp(0.0, 1.0);
+    final projLon = aLon + (bLon - aLon) * clampedT;
+    final projLat = aLat + (bLat - aLat) * clampedT;
+    return _haversine(pLat, pLon, projLat, projLon);
+  }
+
+  Offset _vectorMeters(double lat1, double lon1, double lat2, double lon2) {
+    final dx = _haversine(lat1, lon1, lat1, lon2);
+    final dy = _haversine(lat1, lon1, lat2, lon1);
+    final signX = lon2 >= lon1 ? 1.0 : -1.0;
+    final signY = lat2 >= lat1 ? 1.0 : -1.0;
+    return Offset(dx * signX, dy * signY);
+  }
+
+  double _remainingDistanceMeters(double lat, double lon, List<Position> path) {
+    if (path.length < 2) return 0.0;
+    int nearestIdx = 0;
+    double minD = double.infinity;
+    for (int i = 0; i < path.length; i++) {
+      final d = _haversine(lat, lon, path[i].lat.toDouble(), path[i].lng.toDouble());
+      if (d < minD) { minD = d; nearestIdx = i; }
+    }
+    double sum = 0.0;
+    for (int i = nearestIdx; i < path.length - 1; i++) {
+      sum += _haversine(
+        path[i].lat.toDouble(), path[i].lng.toDouble(),
+        path[i + 1].lat.toDouble(), path[i + 1].lng.toDouble(),
+      );
+    }
+    return sum;
   }
 
   @override
@@ -229,6 +433,13 @@ class _HomePageState extends State<HomePage> {
                         _startFollow();
                         _placesLayer = PlacesLayerController(map: controller);
                       },
+                      onTapListener: (gestureCtx) async {
+                        final p = gestureCtx.point;
+                        if (p == null) return;
+                        final lat = p.coordinates.lat.toDouble();
+                        final lon = p.coordinates.lng.toDouble();
+                        await _confirmDestination(context, lat, lon);
+                      },
                       onCameraChangeListener: (_) { _onCameraChanged(context); },
                       onStyleLoadedListener: (event) async {
                         await _applyLocationSettings();
@@ -250,6 +461,7 @@ class _HomePageState extends State<HomePage> {
                           await style.setStyleImportConfigProperty('basemap', 'lightPreset', 'dusk');
                           await style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', true);
                           await _placesLayer?.ensureInitialized();
+                          _routeManager ??= await _mapboxMap!.annotations.createPolylineAnnotationManager();
                           final vm = Provider.of<NearbyPlacesProvider>(context, listen: false);
                           vm.addListener(() async {
                             if (_mapboxMap == null) return;
@@ -282,6 +494,26 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
                   ),
+                  if (_etaText.isNotEmpty)
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Tiempo estimado de llegada', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                            Text(_etaText, style: const TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
