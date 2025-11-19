@@ -4,6 +4,9 @@ import 'package:kamino_fr/core/app_router.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/core/auth/jwt_utils.dart';
+import 'package:kamino_fr/config/environment_config.dart';
+import 'package:kamino_fr/core/network/http_client.dart';
+import 'package:kamino_fr/features/1_auth/data/auth_api.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -24,15 +27,28 @@ class _SplashPageState extends State<SplashPage> {
     final token = await storage.getAccessToken();
     if (token != null && token.isNotEmpty && JwtUtils.isValid(token)) {
       appState.login();
-      await Future.delayed(const Duration(milliseconds: 1200));
       if (!mounted) return;
       context.go('/home');
-    } else {
-      await storage.clearTokens();
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (!mounted) return;
-      context.go('/welcome');
+      return;
     }
+    final refresh = await storage.getRefreshToken();
+    if (refresh != null && refresh.isNotEmpty) {
+      try {
+        final config = Provider.of<EnvironmentConfig>(context, listen: false);
+        final http = HttpClient(config, storage);
+        final api = AuthApiImpl(http.dio);
+        final r = await api.refresh(refreshToken: refresh);
+        await storage.saveTokens(accessToken: r.accessToken, refreshToken: r.refreshToken);
+        appState.login();
+        if (!mounted) return;
+        context.go('/home');
+        return;
+      } catch (_) {
+        await storage.clearTokens();
+      }
+    }
+    if (!mounted) return;
+    context.go('/welcome');
   }
 
   @override
