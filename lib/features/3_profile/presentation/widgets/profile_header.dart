@@ -1,116 +1,219 @@
+// c:\Users\Josep\Documents\Kmino Complete\kamino_fr\lib\features\3_profile\presentation\widgets\profile_header.dart
 import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_theme.dart';
-import 'package:kamino_fr/features/1_auth/data/models/user.dart';
 
 class ProfileHeader extends StatelessWidget {
-  final User? user;
-  final VoidCallback onEdit;
-  const ProfileHeader({super.key, required this.user, required this.onEdit});
+  final String name;
+  final String email;
+  final int selectedSection;
+  final ValueChanged<int> onSectionChange;
+  final VoidCallback onSettings;
+  final VoidCallback? onStats;
+
+  const ProfileHeader({
+    super.key,
+    required this.name,
+    required this.email,
+    required this.selectedSection,
+    required this.onSectionChange,
+    required this.onSettings,
+    this.onStats,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final u = user;
-    final name = u == null ? '' : '${u.firstName} ${u.lastName}';
-    final subtitle = u == null ? '' : 'Perfil ${u.isActive ? 'activo' : 'inactivo'}';
-
+    final size = MediaQuery.of(context).size;
+    final headerHeight = (size.height * 0.30).clamp(280.0, 360.0).toDouble();
+    final sidePad = (size.width * 0.05).clamp(16.0, 24.0).toDouble();
+    final avatarRadius = (size.width * 0.12).clamp(36.0, 48.0).toDouble();
+    final underlineW = (size.width * 0.28).clamp(80.0, 120.0).toDouble();
     return SizedBox(
-      height: 240,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            height: 180,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.primaryMint,
-                  AppTheme.primaryMint.withOpacity(0.85),
-                  AppTheme.primaryMintDark.withOpacity(0.9),
-                ],
-              ),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryMint.withOpacity(0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 10),
-                )
-              ],
-            ),
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      height: headerHeight,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.primaryMint,
+              AppTheme.primaryMint.withOpacity(0.85),
+              AppTheme.primaryMintDark.withOpacity(0.9),
+            ],
+          ),
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryMint.withOpacity(0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 10),
+            )
+          ],
+        ),
+        padding: EdgeInsets.fromLTRB(sidePad, 16, sidePad, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 220),
-                        child: Text(
-                          name.isEmpty ? '' : name,
-                          key: ValueKey(name),
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
+                  child: Text(
+                    name,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        subtitle,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white70,
-                            ),
-                      ),
-                    ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.settings),
+                      icon: const Icon(Icons.bar_chart),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(width: 32, height: 40),
                       color: Colors.white,
-                      onPressed: onEdit,
+                      onPressed: onStats ??
+                          () => ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Estadísticas próximamente')),
+                              ),
                     ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.bar_chart, color: Colors.white70),
+                    const SizedBox(width: 12),
+                    IconButton(
+                      icon: const Icon(Icons.settings),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(width: 32, height: 40),
+                      color: Colors.white,
+                      onPressed: onSettings,
+                    ),
                   ],
                 )
               ],
             ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 130,
-            child: Center(
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  color: AppTheme.background,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    )
-                  ],
-                ),
-                child: CircleAvatar(
-                  radius: 55,
-                  backgroundColor: AppTheme.background,
-                  child: Icon(Icons.person, color: AppTheme.textBlack, size: 48),
-                ),
+            const SizedBox(height: 10),
+            Center(
+              child: CircleAvatar(
+                radius: avatarRadius,
+                backgroundColor: Colors.grey.shade300,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Center(
+              child: Text(
+                email,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppTheme.textBlack,
+                      fontWeight: FontWeight.w900,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => onSectionChange(0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TweenAnimationBuilder<double>(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeInOut,
+                          tween: Tween<double>(begin: 1.0, end: selectedSection == 0 ? 1.0 : 0.98),
+                          builder: (context, scale, child) => Transform.scale(
+                            scale: scale,
+                            child: TweenAnimationBuilder<double>(
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeInOut,
+                              tween: Tween<double>(begin: 0, end: selectedSection == 0 ? 0 : 2),
+                              builder: (context, value, child) => Transform.translate(
+                                offset: Offset(0, value),
+                                child: AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 220),
+                                  curve: Curves.easeInOut,
+                                  style: (Theme.of(context).textTheme.titleMedium ?? const TextStyle()).copyWith(
+                                    color: selectedSection == 0 ? AppTheme.textBlack : Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                  child: child!,
+                                ),
+                              ),
+                              child: child,
+                            ),
+                          ),
+                          child: const Text('Mis datos'),
+                        ),
+                        const SizedBox(height: 6),
+                        TweenAnimationBuilder<double>(
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeOutBack,
+                          tween: Tween<double>(begin: 0, end: selectedSection == 0 ? underlineW : 0),
+                          builder: (context, w, _) => Container(
+                            height: 2,
+                            width: w <= 0 ? 0 : w,
+                            color: selectedSection == 0 ? AppTheme.textBlack : Colors.transparent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => onSectionChange(1),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        TweenAnimationBuilder<double>(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeInOut,
+                          tween: Tween<double>(begin: 1.0, end: selectedSection == 1 ? 1.0 : 0.98),
+                          builder: (context, scale, child) => Transform.scale(
+                            scale: scale,
+                            child: TweenAnimationBuilder<double>(
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeInOut,
+                              tween: Tween<double>(begin: 0, end: selectedSection == 1 ? 0 : 2),
+                              builder: (context, value, child) => Transform.translate(
+                                offset: Offset(0, value),
+                                child: AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 220),
+                                  curve: Curves.easeInOut,
+                                  style: (Theme.of(context).textTheme.titleMedium ?? const TextStyle()).copyWith(
+                                    color: selectedSection == 1 ? AppTheme.textBlack : Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                  child: child!,
+                                ),
+                              ),
+                              child: child,
+                            ),
+                          ),
+                          child: const Text('Mis bitácoras'),
+                        ),
+                        const SizedBox(height: 6),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TweenAnimationBuilder<double>(
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeOutBack,
+                            tween: Tween<double>(begin: 0, end: selectedSection == 1 ? underlineW : 0),
+                            builder: (context, w, _) => Container(
+                              height: 2,
+                              width: w <= 0 ? 0 : w,
+                              color: selectedSection == 1 ? AppTheme.textBlack : Colors.transparent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

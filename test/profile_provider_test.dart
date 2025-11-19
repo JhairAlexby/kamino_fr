@@ -4,12 +4,18 @@ import 'package:kamino_fr/features/3_profile/data/profile_repository.dart';
 import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/features/1_auth/data/models/user.dart';
 import 'package:kamino_fr/core/app_router.dart';
+import 'package:kamino_fr/features/3_profile/data/profile_api.dart';
 
 class _FakeRepo extends ProfileRepository {
-  _FakeRepo(User u) : super(api: throw UnimplementedError()) { _u = u; }
+  _FakeRepo(User u) : super(api: _FakeProfileApi()) { _u = u; }
   late User _u;
   @override
   Future<User> getProfile() async => _u;
+}
+
+class _FakeProfileApi implements ProfileApi {
+  @override
+  Future<User> getProfile() async => throw UnimplementedError();
 }
 
 class _MemoryTokenStorage implements TokenStorage {

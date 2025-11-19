@@ -5,9 +5,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:flutter/services.dart' show rootBundle;
-import 'package:dio/dio.dart';
-import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
+import 'package:flutter/services.dart' show rootBundle, HapticFeedback;
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/home_provider.dart';
 import 'package:kamino_fr/config/environment_config.dart';
@@ -184,8 +183,7 @@ class _HomePageState extends State<HomePage> {
     if (_mapboxMap == null) return;
     final vm = Provider.of<NearbyPlacesProvider>(ctx, listen: false);
     final camera = await _mapboxMap!.getCameraState();
-    final center = camera.center?.coordinates;
-    if (center == null) return;
+    final center = camera.center.coordinates;
     final size = MediaQuery.of(context).size;
     final sw = await _mapboxMap!.coordinateForPixel(ScreenCoordinate(x: 0, y: size.height));
     final ne = await _mapboxMap!.coordinateForPixel(ScreenCoordinate(x: size.width, y: 0));
@@ -518,82 +516,92 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-            floatingActionButton: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton(
-                  backgroundColor: AppTheme.primaryMint,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  onPressed: () => _openNearbyParams(context),
-                  child: Icon(Icons.tune, color: AppTheme.textBlack),
-                ),
-                const SizedBox(height: 12),
-                FloatingActionButton(
-                  backgroundColor: AppTheme.primaryMint,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  onPressed: () {
-                    showDialog(context: context, builder: (context) => const GenerationModal());
-                  },
-                  child: Icon(Icons.explore, color: AppTheme.textBlack),
-                ),
-                const SizedBox(height: 12),
-                FloatingActionButton(
-                  backgroundColor: AppTheme.primaryMint,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  onPressed: _centerCameraOnUser,
-                  child: Icon(Icons.my_location, color: AppTheme.textBlack),
-                ),
-              ],
-            ),
-            bottomNavigationBar: NavigationBarTheme(
-              data: NavigationBarThemeData(
-                height: 76,
-                backgroundColor: AppTheme.lightMintBackground,
-                indicatorColor: AppTheme.primaryMint.withValues(alpha: 0.20),
-                labelTextStyle: MaterialStateProperty.resolveWith((states) {
-                  final selected = states.contains(MaterialState.selected);
-                  return TextStyle(
-                    color: selected
-                        ? AppTheme.primaryMint
-                        : Theme.of(context).textTheme.bodyMedium?.color,
-                    fontSize: selected ? 13 : 12,
-                    fontWeight: FontWeight.w600,
-                  );
-                }),
-                iconTheme: MaterialStateProperty.resolveWith((states) {
-                  final selected = states.contains(MaterialState.selected);
-                  return IconThemeData(
-                    color: selected
-                        ? AppTheme.primaryMint
-                        : Theme.of(context).textTheme.bodyMedium?.color,
-                    size: selected ? 28 : 26,
-                  );
-                }),
-              ),
-              child: NavigationBar(
-                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                selectedIndex: vm.currentTab,
-                onDestinationSelected: vm.setTab,
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.home),
-                    selectedIcon: Icon(Icons.home),
-                    label: 'Inicio',
+            floatingActionButton: vm.currentTab == 2
+                ? null
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FloatingActionButton(
+                        backgroundColor: AppTheme.primaryMint,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        onPressed: () => _openNearbyParams(context),
+                        child: Icon(Icons.tune, color: AppTheme.textBlack),
+                      ),
+                      const SizedBox(height: 12),
+                      FloatingActionButton(
+                        backgroundColor: AppTheme.primaryMint,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        onPressed: () {
+                          showDialog(context: context, builder: (context) => const GenerationModal());
+                        },
+                        child: Icon(Icons.explore, color: AppTheme.textBlack),
+                      ),
+                      const SizedBox(height: 12),
+                      FloatingActionButton(
+                        backgroundColor: AppTheme.primaryMint,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        onPressed: _centerCameraOnUser,
+                        child: Icon(Icons.my_location, color: AppTheme.textBlack),
+                      ),
+                    ],
                   ),
-                  NavigationDestination(
-                    icon: Icon(Icons.menu_book_outlined),
-                    selectedIcon: Icon(Icons.menu_book),
-                    label: 'Bitácoras',
+            bottomNavigationBar: SafeArea(
+              top: false,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14)),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment.center,
+                        radius: 1.2,
+                        colors: [Color(0xFF2C303A), AppTheme.textBlack],
+                        stops: [0.0, 1.0],
+                      ),
+                      boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, -4))],
+                    ),
+                    child: NavigationBarTheme(
+                      data: NavigationBarThemeData(
+                        height: 76,
+                        backgroundColor: Colors.transparent,
+                        indicatorColor: AppTheme.primaryMint.withValues(alpha: 0.22),
+                        indicatorShape: const StadiumBorder(),
+                        labelTextStyle: MaterialStateProperty.resolveWith((states) {
+                          final selected = states.contains(MaterialState.selected);
+                          return TextStyle(
+                            color: AppTheme.primaryMint.withValues(alpha: selected ? 1.0 : 0.65),
+                            fontWeight: FontWeight.w700,
+                            fontSize: selected ? 13 : 12,
+                          );
+                        }),
+                        iconTheme: MaterialStateProperty.resolveWith((states) {
+                          final selected = states.contains(MaterialState.selected);
+                          return IconThemeData(
+                            color: AppTheme.primaryMint.withValues(alpha: selected ? 1.0 : 0.65),
+                            size: selected ? 28 : 26,
+                          );
+                        }),
+                      ),
+                      child: NavigationBar(
+                        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                        selectedIndex: vm.currentTab,
+                        onDestinationSelected: (i) {
+                          HapticFeedback.selectionClick();
+                          vm.setTab(i);
+                        },
+                        destinations: const [
+                          NavigationDestination(icon: Icon(Icons.home), selectedIcon: Icon(Icons.home), label: 'Inicio'),
+                          NavigationDestination(icon: Icon(Icons.menu_book_outlined), selectedIcon: Icon(Icons.menu_book), label: 'Bitácoras'),
+                          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Perfil'),
+                        ],
+                      ),
+                    ),
                   ),
-                  NavigationDestination(
-                    icon: Icon(Icons.person_outline),
-                    selectedIcon: Icon(Icons.person),
-                    label: 'Perfil',
-                  ),
-                ],
+                ),
               ),
             ),
           );

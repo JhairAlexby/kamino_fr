@@ -23,7 +23,7 @@ class AppState extends ChangeNotifier {
 
 GoRouter buildRouter(AppState appState) {
   return GoRouter(
-    initialLocation: '/welcome',
+    initialLocation: '/home',
     refreshListenable: appState,
     redirect: (context, state) {
       final goingHome = state.matchedLocation == '/home';

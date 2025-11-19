@@ -37,6 +37,25 @@ class _FakeAuthApi implements AuthApi {
       updatedAt: DateTime.parse('2025-11-13T16:37:03.821Z'),
     );
   }
+
+
+  @override
+  Future<AuthResponse> refresh({required String refreshToken}) async {
+    return AuthResponse(
+      user: User(
+        id: 'id',
+        email: 'juan@example.com',
+        firstName: 'Juan',
+        lastName: 'Pérez',
+        role: 'USER',
+        isActive: true,
+        createdAt: DateTime.parse('2025-11-13T16:37:03.821Z'),
+        updatedAt: DateTime.parse('2025-11-13T16:37:03.821Z'),
+      ),
+      accessToken: 'A2',
+      refreshToken: 'R2',
+    );
+  }
 }
 
 class _MemoryTokenStorage implements TokenStorage {
