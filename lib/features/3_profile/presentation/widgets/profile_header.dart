@@ -1,4 +1,3 @@
-// c:\Users\Josep\Documents\Kmino Complete\kamino_fr\lib\features\3_profile\presentation\widgets\profile_header.dart
 import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 
@@ -9,6 +8,7 @@ class ProfileHeader extends StatelessWidget {
   final ValueChanged<int> onSectionChange;
   final VoidCallback onSettings;
   final VoidCallback? onStats;
+  final bool isLoading;
 
   const ProfileHeader({
     super.key,
@@ -18,6 +18,7 @@ class ProfileHeader extends StatelessWidget {
     required this.onSectionChange,
     required this.onSettings,
     this.onStats,
+    this.isLoading = false,
   });
 
   @override
@@ -96,6 +97,12 @@ class ProfileHeader extends StatelessWidget {
               child: CircleAvatar(
                 radius: avatarRadius,
                 backgroundColor: Colors.grey.shade300,
+                child: isLoading
+                    ? const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryMint),
+                      )
+                    : null,
               ),
             ),
             const SizedBox(height: 4),

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/app_theme.dart';
 import 'core/app_router.dart';
-import 'package:go_router/go_router.dart';
 import 'config/environment_config.dart';
 import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/core/network/http_client.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_api.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
+import 'package:kamino_fr/features/3_profile/data/profile_api.dart';
+import 'package:kamino_fr/features/3_profile/data/profile_repository.dart';
+import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 void main() {
@@ -35,16 +37,27 @@ class MyApp extends StatelessWidget {
     final storage = SecureTokenStorage();
     final http = HttpClient(config!, storage);
     final authApi = AuthApiImpl(http.dio);
-    final repo = AuthRepository(api: authApi, storage: storage);
-    final appState = AppState(repo);
+    final authRepo = AuthRepository(api: authApi, storage: storage);
+    final appState = AppState(authRepo);
+
+    final profileApi = ProfileApiImpl(http.dio);
+    final profileRepo = ProfileRepository(api: profileApi);
+
     final router = buildRouter(appState);
 
     // 2. Provide and build the app
     return MultiProvider(
       providers: [
         Provider<EnvironmentConfig>.value(value: config!),
-        Provider<AuthRepository>.value(value: repo),
+        Provider<AuthRepository>.value(value: authRepo),
         ChangeNotifierProvider.value(value: appState),
+        ChangeNotifierProvider(
+          create: (_) => ProfileProvider(
+            repo: profileRepo,
+            storage: storage,
+            appState: appState,
+          ),
+        ),
       ],
       child: MaterialApp.router(
         title: 'Kmino',
