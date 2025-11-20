@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import 'package:kamino_fr/features/3_profile/presentation/widgets/profile_header.dart';
+import 'package:provider/provider.dart';
+import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 
 
 class ProfilePage extends StatefulWidget {
@@ -11,16 +13,38 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   int _selectedSection = 0;
-  final _firstNameCtrl = TextEditingController(text: 'Nombre');
-  final _lastNameCtrl = TextEditingController(text: 'Apellido');
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
   final _currentPasswordCtrl = TextEditingController();
   final _newPasswordCtrl = TextEditingController();
   final Set<String> _interests = {'parques'};
+  bool _areControllersInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileProvider>().loadProfile();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final sidePad = (size.width * 0.05).clamp(16.0, 24.0).toDouble();
+
+    final profileProvider = context.watch<ProfileProvider>();
+    final user = profileProvider.user;
+
+    if (user != null && !_areControllersInitialized) {
+      _firstNameCtrl.text = user.firstName;
+      _lastNameCtrl.text = user.lastName;
+      _areControllersInitialized = true;
+    } else if (user == null) {
+      _areControllersInitialized = false;
+      _firstNameCtrl.clear();
+      _lastNameCtrl.clear();
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.textBlack,
@@ -34,8 +58,9 @@ class _ProfilePageState extends State<ProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ProfileHeader(
-                  name: 'Nombre Usuario',
-                  email: 'Correo@gmail.com',
+                  isLoading: profileProvider.isLoading,
+                  name: user != null ? '${user.firstName} ${user.lastName}' : 'Cargando...',
+                  email: user?.email ?? '',
                   selectedSection: _selectedSection,
                   onSectionChange: (i) => setState(() => _selectedSection = i),
                   onSettings: () => _showSettings(context),
@@ -336,13 +361,8 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             ElevatedButton(
               onPressed: () {
-                // Aquí va la lógica para cerrar sesión
                 Navigator.of(context).pop(); // Cierra el diálogo
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Sesión cerrada exitosamente')),
-                );
-                // Por ejemplo, podrías navegar a la pantalla de login:
-                // Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (c) => LoginPage()), (route) => false);
+                context.read<ProfileProvider>().appState.logout();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryMint,

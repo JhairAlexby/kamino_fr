@@ -4,6 +4,9 @@ import 'package:kamino_fr/features/3_profile/data/profile_repository.dart';
 import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/features/1_auth/data/models/user.dart';
 import 'package:kamino_fr/core/app_router.dart';
+import 'package:kamino_fr/features/1_auth/data/auth_api.dart';
+import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
+import 'package:kamino_fr/features/1_auth/data/models/auth_response.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_api.dart';
 
 class _FakeRepo extends ProfileRepository {
@@ -11,6 +14,17 @@ class _FakeRepo extends ProfileRepository {
   late User _u;
   @override
   Future<User> getProfile() async => _u;
+}
+
+class _FakeAuthApi implements AuthApi {
+  @override
+  Future<AuthResponse> login({required String email, required String password}) async => throw UnimplementedError();
+
+  @override
+  Future<User> register({required String firstName, required String lastName, required String email, required String password}) async => throw UnimplementedError();
+
+  @override
+  Future<AuthResponse> refresh({required String refreshToken}) async => throw UnimplementedError();
 }
 
 class _FakeProfileApi implements ProfileApi {
@@ -45,7 +59,8 @@ void main() {
     );
     final repo = _FakeRepo(user);
     final storage = _MemoryTokenStorage()..a = 'tkn';
-    final appState = AppState();
+    final authRepo = AuthRepository(api: _FakeAuthApi(), storage: storage);
+    final appState = AppState(authRepo);
     final vm = ProfileProvider(repo: repo, storage: storage, appState: appState);
     await vm.loadProfile();
     expect(vm.user, isNotNull);
