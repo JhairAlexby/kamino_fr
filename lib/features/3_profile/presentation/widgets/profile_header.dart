@@ -23,9 +23,9 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final headerHeight = (size.height * 0.30).clamp(280.0, 360.0).toDouble();
+    final headerHeight = (size.height * 0.25).clamp(240.0, 320.0).toDouble();
     final sidePad = (size.width * 0.05).clamp(16.0, 24.0).toDouble();
-    final avatarRadius = (size.width * 0.12).clamp(36.0, 48.0).toDouble();
+    final avatarRadius = (size.width * 0.10).clamp(32.0, 40.0).toDouble();
     final underlineW = (size.width * 0.28).clamp(80.0, 120.0).toDouble();
     return SizedBox(
       height: headerHeight,
@@ -91,14 +91,14 @@ class ProfileHeader extends StatelessWidget {
                 )
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Center(
               child: CircleAvatar(
                 radius: avatarRadius,
                 backgroundColor: Colors.grey.shade300,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Center(
               child: Text(
                 email,
@@ -108,7 +108,7 @@ class ProfileHeader extends StatelessWidget {
                     ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
