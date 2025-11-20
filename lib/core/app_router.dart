@@ -2,32 +2,61 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/welcome_page.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/register_page.dart';
+import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/login_page.dart';
 import 'package:kamino_fr/features/2_home/presentation/pages/home_page.dart';
 import 'package:kamino_fr/features/0_splash/presentation/pages/splash_page.dart';
 
-class AppState extends ChangeNotifier {
-  bool _isAuthenticated = false;
-  bool get isAuthenticated => _isAuthenticated;
+enum AuthStatus { unknown, authenticated, unauthenticated }
 
-  void login() {
-    _isAuthenticated = true;
+class AppState extends ChangeNotifier {
+  final AuthRepository authRepository;
+  AuthStatus _status = AuthStatus.unknown;
+  AuthStatus get status => _status;
+  AppState(this.authRepository) {
+    checkAuthentication();
+  }
+
+  Future<void> checkAuthentication() async {
+    final token = await authRepository.checkAuthStatus();
+    _status = token != null ? AuthStatus.authenticated : AuthStatus.unauthenticated;
     notifyListeners();
   }
 
-  void logout() {
-    _isAuthenticated = false;
+  void login() {
+    _status = AuthStatus.authenticated;
+    notifyListeners();
+  }
+
+  Future<void> logout() async {
+    await authRepository.logout();
+    _status = AuthStatus.unauthenticated;
     notifyListeners();
   }
 }
 
 GoRouter buildRouter(AppState appState) {
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/splash',
     refreshListenable: appState,
     redirect: (context, state) {
-      final goingHome = state.matchedLocation == '/home';
-      if (goingHome && !appState.isAuthenticated) return '/login';
+      final currentStatus = appState.status;
+      final onSplash = state.matchedLocation == '/splash';
+
+      if (currentStatus == AuthStatus.unknown) {
+        return onSplash ? null : '/splash';
+      }
+
+      final onAuthRoute = state.matchedLocation == '/login' ||
+          state.matchedLocation == '/register' ||
+          state.matchedLocation == '/welcome';
+
+      if (currentStatus == AuthStatus.authenticated) {
+        if (onAuthRoute || onSplash) return '/home';
+      } else {
+        if (!onAuthRoute && !onSplash) return '/welcome';
+      }
+
       return null;
     },
     routes: [

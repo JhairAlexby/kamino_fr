@@ -14,6 +14,14 @@ class AuthRepository {
     return r.user;
   }
 
+  Future<void> logout() async {
+    await storage.clearTokens();
+  }
+
+  Future<String?> checkAuthStatus() async {
+    return await storage.getAccessToken();
+  }
+
   Future<User> register({required String firstName, required String lastName, required String email, required String password}) async {
     final user = await api.register(firstName: firstName, lastName: lastName, email: email, password: password);
     return user;
