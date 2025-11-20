@@ -7,6 +7,8 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/services.dart' show rootBundle, HapticFeedback;
+import 'package:dio/dio.dart';
+import 'dart:math' as math;
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/home_provider.dart';
 import 'package:kamino_fr/config/environment_config.dart';
@@ -433,7 +435,6 @@ class _HomePageState extends State<HomePage> {
                       },
                       onTapListener: (gestureCtx) async {
                         final p = gestureCtx.point;
-                        if (p == null) return;
                         final lat = p.coordinates.lat.toDouble();
                         final lon = p.coordinates.lng.toDouble();
                         await _confirmDestination(context, lat, lon);
