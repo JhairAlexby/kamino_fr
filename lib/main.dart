@@ -20,29 +20,38 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key, this.config});
   final EnvironmentConfig? config;
+
   @override
   Widget build(BuildContext context) {
-    final appState = AppState();
-    final GoRouter router = buildRouter(appState);
-    Widget app = MaterialApp.router(
-      title: 'Kmino',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.getTheme(),
-      routerConfig: router,
-    );
-    if (config != null) {
-      final storage = SecureTokenStorage();
-      final http = HttpClient(config!, storage);
-      final authApi = AuthApiImpl(http.dio);
-      final repo = AuthRepository(api: authApi, storage: storage);
-      app = MultiProvider(
-        providers: [
-          Provider<EnvironmentConfig>.value(value: config!),
-          Provider<AuthRepository>.value(value: repo),
-        ],
-        child: app,
+    if (config == null) {
+      return const MaterialApp(
+        home: Scaffold(
+          body: Center(child: Text('Error: Failed to load configuration.')),
+        ),
       );
     }
-    return ChangeNotifierProvider.value(value: appState, child: app);
+
+    // 1. Create dependencies
+    final storage = SecureTokenStorage();
+    final http = HttpClient(config!, storage);
+    final authApi = AuthApiImpl(http.dio);
+    final repo = AuthRepository(api: authApi, storage: storage);
+    final appState = AppState(repo);
+    final router = buildRouter(appState);
+
+    // 2. Provide and build the app
+    return MultiProvider(
+      providers: [
+        Provider<EnvironmentConfig>.value(value: config!),
+        Provider<AuthRepository>.value(value: repo),
+        ChangeNotifierProvider.value(value: appState),
+      ],
+      child: MaterialApp.router(
+        title: 'Kmino',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.getTheme(),
+        routerConfig: router,
+      ),
+    );
   }
 }
