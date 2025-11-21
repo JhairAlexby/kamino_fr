@@ -20,6 +20,7 @@ import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_pr
 import 'package:kamino_fr/features/2_home/presentation/map/places_layers.dart';
 import '../widgets/generation_modal.dart';
 import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -386,6 +387,106 @@ class _HomePageState extends State<HomePage> {
     return sum;
   }
 
+  Widget _buildCollapsedPanel(HomeProvider vm) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+      child: Container(
+        padding: const EdgeInsets.only(top: 6),
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.2,
+            colors: [Color(0xFF2C303A), AppTheme.textBlack],
+            stops: [0.0, 1.0],
+          ),
+          boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, -4))],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 32, height: 3, decoration: BoxDecoration(color: AppTheme.primaryMint, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 4),
+            const Text('Recomendaciones', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primaryMint)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpandedPanel(ScrollController sc) {
+    Widget card(String title) {
+      return Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: AppTheme.lightMintBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.primaryMintDark.withOpacity(0.35)),
+        ),
+        child: Align(
+          alignment: Alignment.bottomLeft,
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryMint,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textBlack)),
+          ),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.2,
+            colors: [Color(0xFF2C303A), AppTheme.textBlack],
+            stops: [0.0, 1.0],
+          ),
+        ),
+        child: SingleChildScrollView(
+          controller: sc,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Joyas ocultas de la semana', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: card('Nombre Lugar')),
+                  const SizedBox(width: 12),
+                  Expanded(child: card('Nombre Lugar')),
+                  const SizedBox(width: 12),
+                  Expanded(child: card('Nombre Lugar')),
+                ]),
+                const SizedBox(height: 20),
+                const Text('Basado en tus últimas rutas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
+                const SizedBox(height: 12),
+                card('Nombre Lugar'),
+                const SizedBox(height: 20),
+                const Text('Destacados de la semana', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: card('Nombre Lugar')),
+                  const SizedBox(width: 12),
+                  Expanded(child: card('Nombre Lugar')),
+                  const SizedBox(width: 12),
+                  Expanded(child: card('Nombre Lugar')),
+                ]),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _posSub?.cancel();
@@ -415,106 +516,115 @@ class _HomePageState extends State<HomePage> {
             body: SafeArea(
               bottom: false,
               child: vm.currentTab == 2
-                  ? const _ProfileContentWrapper()
-                  : Stack(
-                children: [
-                  Positioned.fill(
-                    child: MapWidget(
-                      styleUri: MapboxStyles.STANDARD,
-                      cameraOptions: CameraOptions(
-                        center: Point(coordinates: Position(-98.0, 39.5)),
-                        zoom: 14,
-                        bearing: 0,
-                        pitch: 60,
-                      ),
-                      onMapCreated: (controller) {
-                        _mapboxMap = controller;
-                        _enableUserLocation();
-                        _startFollow();
-                        _placesLayer = PlacesLayerController(map: controller);
-                      },
-                      onTapListener: (gestureCtx) async {
-                        final p = gestureCtx.point;
-                        final lat = p.coordinates.lat.toDouble();
-                        final lon = p.coordinates.lng.toDouble();
-                        await _confirmDestination(context, lat, lon);
-                      },
-                      onCameraChangeListener: (_) { _onCameraChanged(context); },
-                      onStyleLoadedListener: (event) async {
-                        await _applyLocationSettings();
-                        if (_mapboxMap != null) {
-                          final style = _mapboxMap!.style;
-                          await style.addSource(
-                            RasterDemSource(
-                              id: 'mapbox-dem',
-                              url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-                              tileSize: 512,
-                              maxzoom: 14,
-                              prefetchZoomDelta: 0,
-                              tileRequestsDelay: 0.3,
-                              tileNetworkRequestsDelay: 0.5,
-                            ),
-                          );
-                          await style.setStyleTerrainProperty('source', 'mapbox-dem');
-                          await style.setStyleTerrainProperty('exaggeration', 1.0);
-                          await style.setStyleImportConfigProperty('basemap', 'lightPreset', 'dusk');
-                          await style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', true);
-                          await _placesLayer?.ensureInitialized();
-                          _routeManager ??= await _mapboxMap!.annotations.createPolylineAnnotationManager();
-                          final vm = Provider.of<NearbyPlacesProvider>(context, listen: false);
-                          vm.addListener(() async {
-                            if (_mapboxMap == null) return;
-                            final data = vm.places;
-                            await _placesLayer?.updatePlaces(data);
-                          });
-                          _placesLayer?.attachInteractions((place) {
-                            showModalBottomSheet(
-                              context: context,
-                              builder: (ctx) {
-                                return Container(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                                      const SizedBox(height: 6),
-                                      Text(place.category),
-                                      const SizedBox(height: 8),
-                                      Text(place.address),
-                                    ],
-                                  ),
-                                );
+                  ? const ProfilePage()
+                  : SlidingUpPanel(
+                      minHeight: 64,
+                      maxHeight: MediaQuery.of(context).size.height * 0.75,
+                      margin: const EdgeInsets.only(bottom: 0),
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+                      color: Colors.transparent,
+                      collapsed: _buildCollapsedPanel(vm),
+                      panelBuilder: (sc) => _buildExpandedPanel(sc),
+                      body: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: MapWidget(
+                              styleUri: MapboxStyles.STANDARD,
+                              cameraOptions: CameraOptions(
+                                center: Point(coordinates: Position(-98.0, 39.5)),
+                                zoom: 14,
+                                bearing: 0,
+                                pitch: 60,
+                              ),
+                              onMapCreated: (controller) {
+                                _mapboxMap = controller;
+                                _enableUserLocation();
+                                _startFollow();
+                                _placesLayer = PlacesLayerController(map: controller);
                               },
-                            );
-                          });
-                          await _onCameraChanged(context);
-                        }
-                      },
-                    ),
-                  ),
-                  if (_etaText.isNotEmpty)
-                    Positioned(
-                      top: 16,
-                      left: 16,
-                      right: 16,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Tiempo estimado de llegada', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                            Text(_etaText, style: const TextStyle(color: Colors.white)),
-                          ],
-                        ),
+                              onTapListener: (gestureCtx) async {
+                                final p = gestureCtx.point;
+                                final lat = p.coordinates.lat.toDouble();
+                                final lon = p.coordinates.lng.toDouble();
+                                await _confirmDestination(context, lat, lon);
+                              },
+                              onCameraChangeListener: (_) { _onCameraChanged(context); },
+                              onStyleLoadedListener: (event) async {
+                                await _applyLocationSettings();
+                                if (_mapboxMap != null) {
+                                  final style = _mapboxMap!.style;
+                                  await style.addSource(
+                                    RasterDemSource(
+                                      id: 'mapbox-dem',
+                                      url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                                      tileSize: 512,
+                                      maxzoom: 14,
+                                      prefetchZoomDelta: 0,
+                                      tileRequestsDelay: 0.3,
+                                      tileNetworkRequestsDelay: 0.5,
+                                    ),
+                                  );
+                                  await style.setStyleTerrainProperty('source', 'mapbox-dem');
+                                  await style.setStyleTerrainProperty('exaggeration', 1.0);
+                                  await style.setStyleImportConfigProperty('basemap', 'lightPreset', 'dusk');
+                                  await style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', true);
+                                  await _placesLayer?.ensureInitialized();
+                                  _routeManager ??= await _mapboxMap!.annotations.createPolylineAnnotationManager();
+                                  final vm = Provider.of<NearbyPlacesProvider>(context, listen: false);
+                                  vm.addListener(() async {
+                                    if (_mapboxMap == null) return;
+                                    final data = vm.places;
+                                    await _placesLayer?.updatePlaces(data);
+                                  });
+                                  _placesLayer?.attachInteractions((place) {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (ctx) {
+                                        return Container(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                                              const SizedBox(height: 6),
+                                              Text(place.category),
+                                              const SizedBox(height: 8),
+                                              Text(place.address),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  });
+                                  await _onCameraChanged(context);
+                                }
+                              },
+                            ),
+                          ),
+                          if (_etaText.isNotEmpty)
+                            Positioned(
+                              top: 16,
+                              left: 16,
+                              right: 16,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.6),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Tiempo estimado de llegada', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                    Text(_etaText, style: const TextStyle(color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                ],
-              ),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             floatingActionButton: vm.currentTab == 2
@@ -569,12 +679,12 @@ class _HomePageState extends State<HomePage> {
                       data: NavigationBarThemeData(
                         height: 76,
                         backgroundColor: Colors.transparent,
-                        indicatorColor: AppTheme.primaryMint.withValues(alpha: 0.22),
+                        indicatorColor: AppTheme.primaryMint.withOpacity(0.22),
                         indicatorShape: const StadiumBorder(),
                         labelTextStyle: MaterialStateProperty.resolveWith((states) {
                           final selected = states.contains(MaterialState.selected);
                           return TextStyle(
-                            color: AppTheme.primaryMint.withValues(alpha: selected ? 1.0 : 0.65),
+                            color: AppTheme.primaryMint.withOpacity(selected ? 1.0 : 0.65),
                             fontWeight: FontWeight.w700,
                             fontSize: selected ? 13 : 12,
                           );
@@ -582,7 +692,7 @@ class _HomePageState extends State<HomePage> {
                         iconTheme: MaterialStateProperty.resolveWith((states) {
                           final selected = states.contains(MaterialState.selected);
                           return IconThemeData(
-                            color: AppTheme.primaryMint.withValues(alpha: selected ? 1.0 : 0.65),
+                            color: AppTheme.primaryMint.withOpacity(selected ? 1.0 : 0.65),
                             size: selected ? 28 : 26,
                           );
                         }),
@@ -609,14 +719,6 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
-  }
-}
-
-class _ProfileContentWrapper extends StatelessWidget {
-  const _ProfileContentWrapper();
-  @override
-  Widget build(BuildContext context) {
-    return const ProfilePage();
   }
 }
 
