@@ -108,6 +108,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                               child: AuthInput(
                                                 controller: provider.firstNameController,
                                                 hintText: 'Nombre',
+                                                labelText: 'Nombre',
+                                                prefixIcon: Icons.person_outline,
                                                 keyboardType: TextInputType.name,
                                                 validator: (value) {
                                                   if (value == null || value.trim().isEmpty) {
@@ -122,6 +124,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                               child: AuthInput(
                                                 controller: provider.lastNameController,
                                                 hintText: 'Apellido',
+                                                labelText: 'Apellido',
+                                                prefixIcon: Icons.person_outline,
                                                 keyboardType: TextInputType.name,
                                                 validator: (value) {
                                                   if (value == null || value.trim().isEmpty) {
@@ -137,6 +141,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                         AuthInput(
                                           controller: provider.emailController,
                                           hintText: 'Tu@correo.com',
+                                          labelText: 'Correo Electrónico',
+                                          prefixIcon: Icons.email_outlined,
                                           keyboardType: TextInputType.emailAddress,
                                           validator: (value) {
                                             if (value == null || value.trim().isEmpty) {
@@ -151,9 +157,71 @@ class _RegisterPageState extends State<RegisterPage> {
                                           },
                                         ),
                                         SizedBox(height: gapS),
+                                        
+                                        // Selector de Género
+                                        DropdownButtonFormField<String>(
+                                          value: provider.gender,
+                                          items: const [
+                                            DropdownMenuItem(value: 'MALE', child: Text('Hombre')),
+                                            DropdownMenuItem(value: 'FEMALE', child: Text('Mujer')),
+                                            DropdownMenuItem(value: 'NON_BINARY', child: Text('No binario')),
+                                            DropdownMenuItem(value: 'OTHER', child: Text('Otro')),
+                                          ],
+                                          onChanged: (v) {
+                                            if (v != null) provider.setGender(v);
+                                          },
+                                          style: const TextStyle(fontSize: 16, color: Colors.white),
+                                          icon: const Icon(Icons.arrow_drop_down, color: AppTheme.primaryMintDark),
+                                          dropdownColor: const Color(0xFF2C303A),
+                                          decoration: InputDecoration(
+                                            labelText: 'Género',
+                                            hintText: 'Género',
+                                            
+                                            // Icono del dropdown
+                                            prefixIcon: const Icon(Icons.wc),
+                                            prefixIconColor: WidgetStateColor.resolveWith((states) =>
+                                                states.contains(WidgetState.focused)
+                                                    ? AppTheme.primaryMint
+                                                    : AppTheme.primaryMintDark),
+                                                    
+                                            // Fondo glass
+                                            filled: true,
+                                            fillColor: Colors.white.withValues(alpha: 0.05),
+                                            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                                            
+                                            // Bordes
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(16),
+                                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(16),
+                                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(16),
+                                              borderSide: const BorderSide(color: AppTheme.primaryMint, width: 2.0),
+                                            ),
+                                            
+                                            // Textos
+                                            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                                            labelStyle: const TextStyle(color: AppTheme.primaryMintDark),
+                                            floatingLabelStyle: const TextStyle(color: AppTheme.primaryMint, fontWeight: FontWeight.w600),
+                                          ),
+                                          validator: (value) {
+                                            if (value == null || value.isEmpty) {
+                                              return 'Selecciona un género';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                        SizedBox(height: gapS),
+                                        
                                         AuthInput(
                                           controller: provider.passwordController,
                                           hintText: 'Contraseña',
+                                          labelText: 'Contraseña',
+                                          prefixIcon: Icons.lock_outline,
                                           obscureText: provider.obscurePassword,
                                           onToggleObscure: provider.togglePasswordVisibility,
                                           validator: (value) {
@@ -170,6 +238,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                         AuthInput(
                                           controller: provider.confirmPasswordController,
                                           hintText: 'Confirmar Contraseña',
+                                          labelText: 'Confirmar Contraseña',
+                                          prefixIcon: Icons.lock_outline,
                                           obscureText: provider.obscureConfirmPassword,
                                           onToggleObscure: provider.toggleConfirmPasswordVisibility,
                                           validator: (value) {
