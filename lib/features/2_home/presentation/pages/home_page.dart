@@ -19,6 +19,9 @@ import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/map/places_layers.dart';
 import '../widgets/generation_modal.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/nearby_params_modal.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/destination_confirmation_dialog.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/home_sliding_panel.dart';
 import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
@@ -42,63 +45,6 @@ class _HomePageState extends State<HomePage> {
   String _navMode = 'driving';
   DateTime? _lastRouteRecalc;
   Point? _currentDestination;
-  Future<void> _openNearbyParams(BuildContext ctx) async {
-    final vm = Provider.of<NearbyPlacesProvider>(ctx, listen: false);
-    final radiusCtrl = TextEditingController(text: vm.manualRadius.toString());
-    final limitCtrl = TextEditingController(text: vm.manualLimit.toString());
-    bool useManual = vm.useManual;
-    await showModalBottomSheet(
-      context: ctx,
-      isScrollControlled: true,
-      builder: (sheetCtx) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Usar parámetros manuales'),
-                    Switch(
-                      value: useManual,
-                      onChanged: (v) {
-                        setState(() { useManual = v; });
-                      },
-                    ),
-                  ],
-                ),
-                TextField(
-                  controller: radiusCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Radio (km)'),
-                ),
-                TextField(
-                  controller: limitCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Límite (lugares)'),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    final r = double.tryParse(radiusCtrl.text) ?? vm.manualRadius;
-                    final l = int.tryParse(limitCtrl.text) ?? vm.manualLimit;
-                    vm.setManualParams(useManual: useManual, radius: r, limit: l);
-                    Navigator.of(sheetCtx).pop();
-                    _onCameraChanged(ctx);
-                  },
-                  child: const Text('Guardar'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _enableUserLocation() async {
     final status = await Permission.locationWhenInUse.request();
     if (status.isGranted) {
@@ -206,55 +152,6 @@ class _HomePageState extends State<HomePage> {
       radius: vm.useManual ? vm.manualRadius : radius,
       limit: vm.manualLimit,
     );
-  }
-
-  Future<void> _confirmDestination(BuildContext ctx, double lat, double lon) async {
-    String selectedMode = _navMode;
-    final ok = await showDialog<bool>(
-      context: ctx,
-      builder: (dCtx) {
-        return AlertDialog(
-          title: const Text('Confirmación'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('¿Deseas ir a esta ubicación?'),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Text('Modo: '),
-                  const SizedBox(width: 8),
-                  StatefulBuilder(
-                    builder: (c, setState) {
-                      return DropdownButton<String>(
-                        value: selectedMode,
-                        items: const [
-                          DropdownMenuItem(value: 'driving', child: Text('Conducción')),
-                          DropdownMenuItem(value: 'walking', child: Text('Caminando')),
-                          DropdownMenuItem(value: 'cycling', child: Text('Bicicleta')),
-                        ],
-                        onChanged: (v) { if (v != null) { setState(() { selectedMode = v; }); } },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () { Navigator.of(dCtx).pop(false); }, child: const Text('Cancelar')),
-            ElevatedButton(onPressed: () { Navigator.of(dCtx).pop(true); }, child: const Text('Ir')),
-          ],
-        );
-      },
-    );
-    if (ok == true) {
-      _navMode = selectedMode;
-      _currentDestination = Point(coordinates: Position(lon, lat));
-      final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
-      await _calculateAndShowRoute(latOrigin: geoPos.latitude, lonOrigin: geoPos.longitude, latDest: lat, lonDest: lon, mode: _navMode);
-    }
   }
 
   Future<void> _calculateAndShowRoute({required double latOrigin, required double lonOrigin, required double latDest, required double lonDest, required String mode}) async {
@@ -387,106 +284,6 @@ class _HomePageState extends State<HomePage> {
     return sum;
   }
 
-  Widget _buildCollapsedPanel(HomeProvider vm) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-      child: Container(
-        padding: const EdgeInsets.only(top: 6),
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 1.2,
-            colors: [Color(0xFF2C303A), AppTheme.textBlack],
-            stops: [0.0, 1.0],
-          ),
-          boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, -4))],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 32, height: 3, decoration: BoxDecoration(color: AppTheme.primaryMint, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 4),
-            const Text('Recomendaciones', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primaryMint)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExpandedPanel(ScrollController sc) {
-    Widget card(String title) {
-      return Container(
-        height: 120,
-        decoration: BoxDecoration(
-          color: AppTheme.lightMintBackground,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.primaryMintDark.withOpacity(0.35)),
-        ),
-        child: Align(
-          alignment: Alignment.bottomLeft,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryMint,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textBlack)),
-          ),
-        ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 1.2,
-            colors: [Color(0xFF2C303A), AppTheme.textBlack],
-            stops: [0.0, 1.0],
-          ),
-        ),
-        child: SingleChildScrollView(
-          controller: sc,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Joyas ocultas de la semana', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(child: card('Nombre Lugar')),
-                  const SizedBox(width: 12),
-                  Expanded(child: card('Nombre Lugar')),
-                  const SizedBox(width: 12),
-                  Expanded(child: card('Nombre Lugar')),
-                ]),
-                const SizedBox(height: 20),
-                const Text('Basado en tus últimas rutas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
-                const SizedBox(height: 12),
-                card('Nombre Lugar'),
-                const SizedBox(height: 20),
-                const Text('Destacados de la semana', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(child: card('Nombre Lugar')),
-                  const SizedBox(width: 12),
-                  Expanded(child: card('Nombre Lugar')),
-                  const SizedBox(width: 12),
-                  Expanded(child: card('Nombre Lugar')),
-                ]),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   void dispose() {
     _posSub?.cancel();
@@ -523,8 +320,8 @@ class _HomePageState extends State<HomePage> {
                       margin: const EdgeInsets.only(bottom: 0),
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
                       color: Colors.transparent,
-                      collapsed: _buildCollapsedPanel(vm),
-                      panelBuilder: (sc) => _buildExpandedPanel(sc),
+                      collapsed: const HomeCollapsedPanel(),
+                      panelBuilder: (sc) => HomeExpandedPanel(scrollController: sc),
                       body: Stack(
                         children: [
                           Positioned.fill(
@@ -546,7 +343,16 @@ class _HomePageState extends State<HomePage> {
                                 final p = gestureCtx.point;
                                 final lat = p.coordinates.lat.toDouble();
                                 final lon = p.coordinates.lng.toDouble();
-                                await _confirmDestination(context, lat, lon);
+                                final selectedMode = await showDialog<String>(
+                                  context: context,
+                                  builder: (_) => DestinationConfirmationDialog(initialMode: _navMode),
+                                );
+                                if (selectedMode != null) {
+                                  _navMode = selectedMode;
+                                  _currentDestination = Point(coordinates: Position(lon, lat));
+                                  final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+                                  await _calculateAndShowRoute(latOrigin: geoPos.latitude, lonOrigin: geoPos.longitude, latDest: lat, lonDest: lon, mode: _navMode);
+                                }
                               },
                               onCameraChangeListener: (_) { _onCameraChanged(context); },
                               onStyleLoadedListener: (event) async {
@@ -636,7 +442,16 @@ class _HomePageState extends State<HomePage> {
                         backgroundColor: AppTheme.primaryMint,
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        onPressed: () => _openNearbyParams(context),
+                        onPressed: () async {
+                          final changed = await showModalBottomSheet<bool>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => const NearbyParamsModal(),
+                          );
+                          if (changed == true) {
+                            _onCameraChanged(context);
+                          }
+                        },
                         child: Icon(Icons.tune, color: AppTheme.textBlack),
                       ),
                       const SizedBox(height: 12),

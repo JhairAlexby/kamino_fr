@@ -16,6 +16,8 @@ import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_input.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_primary_button.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_logo.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_bottom_prompt.dart';
+import 'package:kamino_fr/features/1_auth/presentation/widgets/login_inputs_section.dart';
+import 'package:kamino_fr/features/1_auth/presentation/widgets/login_error_display.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -101,62 +103,25 @@ class _LoginPageState extends State<LoginPage> {
                                 
                                 SizedBox(height: gapM),
 
-                                // Formulario usando los Widgets de tu amigo
+                                // Formulario Modularizado
                                 Form(
                                   key: provider.formKey,
                                   child: Column(
                                     children: [
-                                      AuthInput(
-                                        controller: provider.emailController,
-                                        hintText: 'Tu@correo.com',
-                                        labelText: 'Correo Electrónico',
-                                        prefixIcon: Icons.email_outlined,
-                                        keyboardType: TextInputType.emailAddress,
-                                        validator: (value) {
-                                          if (value == null || value.trim().isEmpty) return 'El correo es obligatorio';
-                                          if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value.trim())) return 'Correo inválido';
-                                          return null;
-                                        },
-                                      ),
-                                      
-                                      SizedBox(height: gapS),
-                                      
-                                      AuthInput(
-                                        controller: provider.passwordController,
-                                        hintText: 'Contraseña',
-                                        labelText: 'Contraseña',
-                                        prefixIcon: Icons.lock_outline,
-                                        obscureText: provider.obscurePassword,
-                                        onToggleObscure: provider.togglePasswordVisibility,
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) return 'La contraseña es obligatoria';
-                                          return null;
-                                        },
+                                      LoginInputsSection(
+                                        emailController: provider.emailController,
+                                        passwordController: provider.passwordController,
+                                        obscurePassword: provider.obscurePassword,
+                                        onTogglePassword: provider.togglePasswordVisibility,
+                                        gap: gapS,
                                       ),
 
-                                      // Mensaje de Error (Estilo visual de tu amigo)
+                                      // Mensaje de Error Modularizado
                                       if (provider.statusMessage != null) ...[
                                         SizedBox(height: gapS),
-                                        Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: provider.statusIsError
-                                                ? Colors.red.withOpacity(0.15)
-                                                : AppTheme.primaryMint.withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(
-                                              color: provider.statusIsError ? Colors.red : AppTheme.primaryMint,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            provider.statusMessage!,
-                                            style: TextStyle(
-                                              color: provider.statusIsError ? Colors.red : AppTheme.primaryMint,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
+                                        LoginErrorDisplay(
+                                          message: provider.statusMessage,
+                                          isError: provider.statusIsError,
                                         ),
                                       ],
                                     ],
