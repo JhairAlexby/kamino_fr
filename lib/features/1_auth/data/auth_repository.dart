@@ -22,8 +22,8 @@ class AuthRepository {
     return await storage.getAccessToken();
   }
 
-  Future<User> register({required String firstName, required String lastName, required String email, required String password}) async {
-    final user = await api.register(firstName: firstName, lastName: lastName, email: email, password: password);
+  Future<User> register({required String firstName, required String lastName, required String email, required String password, String? gender}) async {
+    final user = await api.register(firstName: firstName, lastName: lastName, email: email, password: password, gender: gender);
     return user;
   }
 }

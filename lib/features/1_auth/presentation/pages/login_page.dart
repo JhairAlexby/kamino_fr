@@ -109,8 +109,8 @@ class _LoginPageState extends State<LoginPage> {
                                       AuthInput(
                                         controller: provider.emailController,
                                         hintText: 'Tu@correo.com',
-                                        // Agregamos icono si el diseño de tu amigo lo soporta
-                                        // prefixIcon: Icons.email_outlined, 
+                                        labelText: 'Correo Electrónico',
+                                        prefixIcon: Icons.email_outlined,
                                         keyboardType: TextInputType.emailAddress,
                                         validator: (value) {
                                           if (value == null || value.trim().isEmpty) return 'El correo es obligatorio';
@@ -124,6 +124,8 @@ class _LoginPageState extends State<LoginPage> {
                                       AuthInput(
                                         controller: provider.passwordController,
                                         hintText: 'Contraseña',
+                                        labelText: 'Contraseña',
+                                        prefixIcon: Icons.lock_outline,
                                         obscureText: provider.obscurePassword,
                                         onToggleObscure: provider.togglePasswordVisibility,
                                         validator: (value) {

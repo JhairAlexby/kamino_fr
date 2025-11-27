@@ -25,7 +25,7 @@ class _FakeAuthApi implements AuthApi {
   }
 
   @override
-  Future<User> register({required String firstName, required String lastName, required String email, required String password}) async {
+  Future<User> register({required String firstName, required String lastName, required String email, required String password, String? gender}) async {
     return User(
       id: 'new-id',
       email: email,

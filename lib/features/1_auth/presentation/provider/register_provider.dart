@@ -24,6 +24,12 @@ class RegisterProvider extends ChangeNotifier {
   bool _obscureConfirmPassword = true;
   bool get obscureConfirmPassword => _obscureConfirmPassword;
 
+  String? gender;
+  void setGender(String value) {
+    gender = value;
+    notifyListeners();
+  }
+
   void togglePasswordVisibility() {
     _obscurePassword = !_obscurePassword;
     notifyListeners();
@@ -46,7 +52,7 @@ class RegisterProvider extends ChangeNotifier {
       final lastName = lastNameController.text.trim();
       final email = emailController.text.trim();
       final password = passwordController.text;
-      await _repo.register(firstName: firstName, lastName: lastName, email: email, password: password);
+      await _repo.register(firstName: firstName, lastName: lastName, email: email, password: password, gender: gender);
       _isLoading = false;
       notifyListeners();
       if (!context.mounted) return;

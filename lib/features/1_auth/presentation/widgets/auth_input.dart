@@ -33,14 +33,25 @@ class AuthInput extends StatelessWidget {
       obscureText: obscureText,
       validator: validator,
       autofillHints: autofillHints,
-      style: const TextStyle(fontSize: 16, color: AppTheme.primaryMintDark),
+      // Texto blanco para mayor legibilidad
+      style: const TextStyle(fontSize: 16, color: Colors.white),
+      cursorColor: AppTheme.primaryMint,
       decoration: InputDecoration(
+        labelText: labelText,
         hintText: hintText,
-        labelText: null,
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppTheme.primaryMintDark) : null,
+        // Icono dinámico: Cambia de color al enfocar
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+        prefixIconColor: WidgetStateColor.resolveWith((states) =>
+            states.contains(WidgetState.focused)
+                ? AppTheme.primaryMint
+                : AppTheme.primaryMintDark),
+        
+        // Fondo sutil estilo "Glass"
         filled: true,
-        fillColor: AppTheme.background.withValues(alpha: 0.92),
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        fillColor: Colors.white.withValues(alpha: 0.05),
+        
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        
         suffixIcon: onToggleObscure != null
             ? IconButton(
                 icon: Icon(
@@ -50,21 +61,27 @@ class AuthInput extends StatelessWidget {
                 onPressed: onToggleObscure,
               )
             : null,
+            
+        // Bordes redondeados y sutiles
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.black12),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.black12),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
+        
+        // Borde enfocado brillante
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: AppTheme.primaryMintDark, width: 2.5),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppTheme.primaryMint, width: 2.0),
         ),
-        hintStyle: const TextStyle(color: AppTheme.primaryMintDark),
-        labelStyle: const TextStyle(color: AppTheme.textBlack),
-        errorStyle: const TextStyle(fontSize: 12, color: Colors.red),
+        
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+        labelStyle: const TextStyle(color: AppTheme.primaryMintDark),
+        floatingLabelStyle: const TextStyle(color: AppTheme.primaryMint, fontWeight: FontWeight.w600),
+        errorStyle: const TextStyle(fontSize: 12, color: Color(0xFFFF6B6B)),
       ),
     );
   }
