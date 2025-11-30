@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:kamino_fr/core/app_theme.dart';
 import '../../data/models/place.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:typed_data';
@@ -60,7 +61,7 @@ class PlacesLayerController {
         options.add(
           CircleAnnotationOptions(
             geometry: Point(coordinates: Position(p.longitude, p.latitude)),
-            circleColor: Colors.red.value,
+            circleColor: AppTheme.primaryMint.value,
             circleRadius: 8.0,
             circleStrokeColor: Colors.white.value,
             circleStrokeWidth: 2.0,

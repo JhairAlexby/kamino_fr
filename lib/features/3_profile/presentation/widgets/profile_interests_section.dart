@@ -67,7 +67,7 @@ class ProfileInterestsSection extends StatelessWidget {
                         selectedColor: AppTheme.primaryMint,
                         backgroundColor: Theme.of(context).cardColor,
                         checkmarkColor: Colors.white,
-                        showCheckmark: false,
+                        showCheckmark: true,
                       ),
                     );
                   },
