@@ -76,7 +76,7 @@ class WelcomePage extends StatelessWidget {
                                   text: TextSpan(
                                     style: TextStyle(
                                       fontSize: titleSize,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w800,
                                       color: Colors.white,
                                     ),
                                     children: const [

@@ -55,23 +55,27 @@ class _ProfilePageState extends State<ProfilePage> {
         right: false,
         top: false,
         bottom: true,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ProfileHeader(
-                isLoading: profileProvider.isLoading,
-                name: user != null ? '${user.firstName} ${user.lastName}' : 'Cargando...',
-                email: user?.email ?? '',
-                selectedSection: _selectedSection,
-                onSectionChange: (i) => setState(() => _selectedSection = i),
-                onSettings: () => _showSettings(context),
-                onStats: () {},
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: sidePad),
-                child: AnimatedSwitcher(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ProfileHeader(
+              isLoading: profileProvider.isLoading,
+              name: user != null ? '${user.firstName} ${user.lastName}' : 'Cargando...',
+              email: user?.email ?? '',
+              selectedSection: _selectedSection,
+              onSectionChange: (i) => setState(() => _selectedSection = i),
+              onSettings: () => _showSettings(context),
+              onStats: () {},
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: sidePad),
+                      child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
                   switchInCurve: Curves.easeOut,
                   switchOutCurve: Curves.easeIn,
@@ -147,10 +151,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                 ),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
+    ],
+  ),
+),
     );
   }
 

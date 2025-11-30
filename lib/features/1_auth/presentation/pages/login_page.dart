@@ -12,7 +12,6 @@ import 'package:kamino_fr/features/1_auth/presentation/provider/login_provider.d
 
 // Widgets Reutilizables (El diseño visual de tu equipo)
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_header.dart';
-import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_input.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_primary_button.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_logo.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_bottom_prompt.dart';
@@ -97,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 28,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
                                 

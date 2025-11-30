@@ -56,7 +56,7 @@ class HeaderWidget extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     fontSize: 48,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: Colors.white,
                   ),
                 ),
@@ -65,7 +65,7 @@ class HeaderWidget extends StatelessWidget {
                   subtitle,
                   style: const TextStyle(
                     fontSize: 24,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
