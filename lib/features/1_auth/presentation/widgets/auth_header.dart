@@ -81,7 +81,7 @@ class _AuthHeaderState extends State<AuthHeader> with TickerProviderStateMixin {
               widget.title,
               style: const TextStyle(
                 fontSize: 48,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
                 color: Colors.white,
               ),
             ),
@@ -90,7 +90,7 @@ class _AuthHeaderState extends State<AuthHeader> with TickerProviderStateMixin {
               widget.subtitle,
               style: const TextStyle(
                 fontSize: 24,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
             ),

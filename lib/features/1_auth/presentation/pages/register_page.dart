@@ -93,7 +93,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: titleSize,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                   SizedBox(height: gapM),

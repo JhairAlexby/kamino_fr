@@ -16,18 +16,32 @@ class RegisterGenderDropdown extends StatelessWidget {
     return DropdownButtonFormField<String>(
       value: value,
       items: const [
-        DropdownMenuItem(value: 'MALE', child: Text('Hombre')),
-        DropdownMenuItem(value: 'FEMALE', child: Text('Mujer')),
-        DropdownMenuItem(value: 'NON_BINARY', child: Text('No binario')),
-        DropdownMenuItem(value: 'OTHER', child: Text('Otro')),
+        DropdownMenuItem(value: 'MALE', child: Text('Hombre', style: TextStyle(color: Colors.white))),
+        DropdownMenuItem(value: 'FEMALE', child: Text('Mujer', style: TextStyle(color: Colors.white))),
+        DropdownMenuItem(value: 'NON_BINARY', child: Text('No binario', style: TextStyle(color: Colors.white))),
+        DropdownMenuItem(value: 'OTHER', child: Text('Otro', style: TextStyle(color: Colors.white))),
       ],
       onChanged: onChanged,
-      style: const TextStyle(fontSize: 16, color: Colors.white),
+      style: const TextStyle(
+        fontSize: 16, 
+        color: Colors.white, 
+        fontWeight: FontWeight.w600, // Consistent bold
+        fontFamily: 'Inter',
+      ),
       icon: const Icon(Icons.arrow_drop_down, color: AppTheme.primaryMintDark),
       dropdownColor: const Color(0xFF2C303A),
+      hint: Text(
+        'Género',
+        style: TextStyle(
+          color: AppTheme.primaryMintDark,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'Inter',
+        ),
+      ),
       decoration: InputDecoration(
-        labelText: 'Género',
-        hintText: 'Género',
+        // labelText removed to avoid double label
+        // hintText removed in favor of hint widget property for better control in Dropdown
         
         // Icono del dropdown
         prefixIcon: const Icon(Icons.wc),
@@ -56,7 +70,7 @@ class RegisterGenderDropdown extends StatelessWidget {
         ),
         
         // Textos
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+        // hintStyle removed as we use the hint widget
         labelStyle: const TextStyle(color: AppTheme.primaryMintDark),
         floatingLabelStyle: const TextStyle(color: AppTheme.primaryMint, fontWeight: FontWeight.w600),
       ),

@@ -58,10 +58,27 @@ class AppTheme {
 
       // 5. Tema de texto principal
       textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: textBlack),
-        bodyMedium: TextStyle(color: textBlack),
-        titleLarge: TextStyle(color: textBlack, fontWeight: FontWeight.w600),
-        titleMedium: TextStyle(color: textBlack, fontWeight: FontWeight.w600),
+        // Body text (Texto normal - ahora en negrita w600)
+        bodyLarge: TextStyle(color: textBlack, fontWeight: FontWeight.w600),
+        bodyMedium: TextStyle(color: textBlack, fontWeight: FontWeight.w600),
+        bodySmall: TextStyle(color: textBlack, fontWeight: FontWeight.w600),
+        
+        // Titles & Headlines (Títulos - más negrita que el texto normal w800)
+        titleLarge: TextStyle(color: textBlack, fontWeight: FontWeight.w800),
+        titleMedium: TextStyle(color: textBlack, fontWeight: FontWeight.w800),
+        titleSmall: TextStyle(color: textBlack, fontWeight: FontWeight.w800),
+        
+        headlineLarge: TextStyle(color: textBlack, fontWeight: FontWeight.w800),
+        headlineMedium: TextStyle(color: textBlack, fontWeight: FontWeight.w800),
+        headlineSmall: TextStyle(color: textBlack, fontWeight: FontWeight.w800),
+        
+        displayLarge: TextStyle(color: textBlack, fontWeight: FontWeight.w800),
+        displayMedium: TextStyle(color: textBlack, fontWeight: FontWeight.w800),
+        displaySmall: TextStyle(color: textBlack, fontWeight: FontWeight.w800),
+        
+        labelLarge: TextStyle(color: textBlack, fontWeight: FontWeight.w700),
+        labelMedium: TextStyle(color: textBlack, fontWeight: FontWeight.w700),
+        labelSmall: TextStyle(color: textBlack, fontWeight: FontWeight.w700),
       ),
       
       // 6. Tema de AppBar (Corregido)
