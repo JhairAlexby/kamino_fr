@@ -33,14 +33,14 @@ class RegisterGenderDropdown extends StatelessWidget {
       hint: Text(
         'Género',
         style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.3),
+          color: AppTheme.primaryMintDark,
           fontSize: 16,
           fontWeight: FontWeight.w600,
           fontFamily: 'Inter',
         ),
       ),
       decoration: InputDecoration(
-        labelText: 'Género',
+        // labelText removed to avoid double label
         // hintText removed in favor of hint widget property for better control in Dropdown
         
         // Icono del dropdown
