@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'dart:async';
 import 'dart:typed_data';
-import 'dart:ui' show ImageFilter;
+import 'dart:ui' show ImageFilter, Path, Paint, Canvas;
 import 'package:flutter/services.dart' show rootBundle, HapticFeedback;
 import 'package:dio/dio.dart';
 import 'dart:math' as math;
@@ -32,7 +32,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   MapboxMap? _mapboxMap;
   StreamSubscription<geo.Position>? _posSub;
   final bool _followUser = true;
@@ -45,6 +45,31 @@ class _HomePageState extends State<HomePage> {
   String _navMode = 'driving';
   DateTime? _lastRouteRecalc;
   Point? _currentDestination;
+  
+  late AnimationController _animController;
+  late Animation<double> _scaleAnimation;
+  bool _showTooltip = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+    );
+  }
+
+  void _hideTooltip() {
+    if (_showTooltip) {
+      setState(() {
+        _showTooltip = false;
+      });
+    }
+  }
+
   Future<void> _enableUserLocation() async {
     final status = await Permission.locationWhenInUse.request();
     if (status.isGranted) {
@@ -179,7 +204,7 @@ class _HomePageState extends State<HomePage> {
     final ls = LineString(coordinates: coords);
     final opt = PolylineAnnotationOptions(
       geometry: ls,
-      lineColor: Colors.cyan.value,
+      lineColor: AppTheme.primaryMint.value,
       lineWidth: 6,
       lineOpacity: 0.8,
     );
@@ -286,6 +311,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    _animController.dispose();
     _posSub?.cancel();
     try {
       final vm = Provider.of<NearbyPlacesProvider>(context, listen: false);
@@ -320,13 +346,14 @@ class _HomePageState extends State<HomePage> {
                       margin: const EdgeInsets.only(bottom: 0),
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
                       color: Colors.transparent,
+                      onPanelSlide: (_) => _hideTooltip(),
                       collapsed: const HomeCollapsedPanel(),
                       panelBuilder: (sc) => HomeExpandedPanel(scrollController: sc),
                       body: Stack(
                         children: [
                           Positioned.fill(
                             child: MapWidget(
-                              styleUri: MapboxStyles.STANDARD,
+                              styleUri: MapboxStyles.DARK,
                               cameraOptions: CameraOptions(
                                 center: Point(coordinates: Position(-98.0, 39.5)),
                                 zoom: 14,
@@ -340,6 +367,7 @@ class _HomePageState extends State<HomePage> {
                                 _placesLayer = PlacesLayerController(map: controller);
                               },
                               onTapListener: (gestureCtx) async {
+                                _hideTooltip();
                                 final p = gestureCtx.point;
                                 final lat = p.coordinates.lat.toDouble();
                                 final lon = p.coordinates.lng.toDouble();
@@ -374,6 +402,68 @@ class _HomePageState extends State<HomePage> {
                                   await style.setStyleTerrainProperty('exaggeration', 1.0);
                                   await style.setStyleImportConfigProperty('basemap', 'lightPreset', 'dusk');
                                   await style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', true);
+
+                                  // 1. Configurar Niebla (Atmósfera) para un horizonte suave
+                                  // Nota: La API de Flutter de Mapbox puede requerir un método diferente o json encode
+                                  // para propiedades complejas de estilo root como 'fog'.
+                                  // Si 'styleJSON' es de solo lectura o no funciona así, usamos setStyleLayerProperty si fuera una capa,
+                                  // pero fog es propiedad raíz. Intentaremos con una llamada directa si existe, o lo omitimos si la API no lo expone.
+                                  // Al revisar la API, para propiedades root genéricas se suele usar style.styleJSON = ... pero es un getter.
+                                  // Usaremos setStyleJSONProperty si existe en una extensión, pero el error dice que no.
+                                  // La alternativa correcta es usar style.setStyleURI o cargar el JSON completo, pero para un cambio puntual:
+                                  // Intentaremos omitir la niebla si la API estricta no lo permite fácilmente sin recargar todo el estilo.
+                                  // O buscamos si hay un método setStyleProperty específico.
+                                  // Investigando: style.setStyleProperty("fog", ...)
+                                  /*
+                                  await style.setStyleProperty('fog', {
+                                    "range": [0.5, 10],
+                                    "color": "rgb(24, 26, 32)",
+                                    "horizon-blend": 0.2
+                                  });
+                                  */
+
+                                  // 2. Agregar capa de Edificios 3D
+                                  try {
+                                    if (await style.styleSourceExists('composite')) {
+                                      final buildingsLayer = FillExtrusionLayer(
+                                        id: '3d-buildings',
+                                        sourceId: 'composite',
+                                        sourceLayer: 'building',
+                                        minZoom: 15.0,
+                                        filter: ['==', ['get', 'extrude'], 'true'],
+                                        fillExtrusionColor: Colors.grey.shade800.value,
+                                        fillExtrusionOpacity: 0.6,
+                                        // Mapbox Flutter v10+ espera expresiones como List<Object?> o similares, no List<String> directo si el tipo es double?
+                                        // Requerimos castear o usar la clase Expression si está disponible, o pasar la lista como dynamic.
+                                        // Sin embargo, el error dice "List<String> can't be assigned to double?".
+                                        // Esto significa que la propiedad fillExtrusionHeight espera un valor fijo (double) y no una expresión (List) en este wrapper.
+                                        // Para usar expresiones (data-driven styling), debemos usar propiedades que acepten expresiones.
+                                        // En el SDK de Flutter v2/v3, algunas propiedades son tipadas estrictas.
+                                        // Si no permite expresiones, usaremos un valor fijo o lo omitiremos.
+                                        // Pero la extrusión 3D sin altura variable no tiene sentido.
+                                        // Verificamos si hay propiedades 'Expression' o si debemos usar 'addLayer' con un JSON crudo.
+                                        // Al ser FillExtrusionLayer una clase tipada, revisemos sus campos.
+                                        // Si fillExtrusionHeight es double?, entonces no soporta expresiones directamente en este constructor.
+                                        // Intentaremos usar un valor fijo por ahora para eliminar el error,
+                                        // o mejor, eliminamos la capa 3D temporalmente si no podemos usar alturas reales,
+                                        // ya que edificios planos elevados se ven mal.
+                                        //
+                                        // CORRECCIÓN: La librería mapbox_maps_flutter suele tener soporte para expresiones.
+                                        // El problema es que pasé `['get', 'height']` (List<String>) a un campo que el linter dice que es `double?`.
+                                        // Esto sugiere que la versión de la librería que usamos tiene bindings que fuerzan tipos escalares para estas propiedades
+                                        // o estoy usando el constructor incorrecto.
+                                        //
+                                        // Solución rápida: Usar valores fijos para compilar, y luego investigar si podemos usar addStyleLayer con JSON crudo.
+                                        fillExtrusionHeight: 20.0, // Altura fija temporal para prueba
+                                        fillExtrusionBase: 0.0,
+                                        fillExtrusionAmbientOcclusionIntensity: 0.3,
+                                      );
+                                      await style.addLayer(buildingsLayer);
+                                    }
+                                  } catch (e) {
+                                    debugPrint('Error agregando edificios 3D: $e');
+                                  }
+
                                   await _placesLayer?.ensureInitialized();
                                   _routeManager ??= await _mapboxMap!.annotations.createPolylineAnnotationManager();
                                   final vm = Provider.of<NearbyPlacesProvider>(context, listen: false);
@@ -408,6 +498,45 @@ class _HomePageState extends State<HomePage> {
                               },
                             ),
                           ),
+                          Positioned(
+                            right: 16,
+                            top: MediaQuery.of(context).padding.top,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                FloatingActionButton(
+                                  heroTag: 'settings_btn',
+                                  backgroundColor: AppTheme.primaryMint,
+                                  elevation: 4,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  onPressed: () async {
+                                    _hideTooltip();
+                                    final changed = await showModalBottomSheet<bool>(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      builder: (_) => const NearbyParamsModal(),
+                                    );
+                                    if (changed == true) {
+                                      _onCameraChanged(context);
+                                    }
+                                  },
+                                  child: const Icon(Icons.tune, color: AppTheme.textBlack),
+                                ),
+                                const SizedBox(height: 12),
+                                FloatingActionButton(
+                                  heroTag: 'location_btn',
+                                  backgroundColor: AppTheme.primaryMint,
+                                  elevation: 4,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  onPressed: () {
+                                    _hideTooltip();
+                                    _centerCameraOnUser();
+                                  },
+                                  child: const Icon(Icons.my_location, color: AppTheme.textBlack),
+                                ),
+                              ],
+                            ),
+                          ),
                           if (_etaText.isNotEmpty)
                             Positioned(
                               top: 16,
@@ -437,41 +566,56 @@ class _HomePageState extends State<HomePage> {
                 ? null
                 : Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      FloatingActionButton(
-                        backgroundColor: AppTheme.primaryMint,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        onPressed: () async {
-                          final changed = await showModalBottomSheet<bool>(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (_) => const NearbyParamsModal(),
-                          );
-                          if (changed == true) {
-                            _onCameraChanged(context);
-                          }
-                        },
-                        child: Icon(Icons.tune, color: AppTheme.textBlack),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Mensaje tipo burbuja
+                          if (_showTooltip) ...[
+                            const _TooltipBubble(message: 'Generemos tu ruta de hoy'),
+                            const SizedBox(width: 8),
+                          ],
+                          // Botón principal animado (fijo)
+                          GestureDetector(
+                            onTap: () {
+                              _hideTooltip();
+                              showDialog(context: context, builder: (context) => const GenerationModal());
+                            },
+                        child: AnimatedBuilder(
+                          animation: _scaleAnimation,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: _scaleAnimation.value,
+                              child: Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                    // Sombra "glow" animada
+                                    BoxShadow(
+                                      color: AppTheme.primaryMint.withValues(alpha: 0.4),
+                                      blurRadius: 12 * _scaleAnimation.value,
+                                      spreadRadius: 2 * (_scaleAnimation.value - 1.0),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(Icons.explore, color: AppTheme.textBlack, size: 32),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      FloatingActionButton(
-                        backgroundColor: AppTheme.primaryMint,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        onPressed: () {
-                          showDialog(context: context, builder: (context) => const GenerationModal());
-                        },
-                        child: Icon(Icons.explore, color: AppTheme.textBlack),
+                      ],
                       ),
-                      const SizedBox(height: 12),
-                      FloatingActionButton(
-                        backgroundColor: AppTheme.primaryMint,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        onPressed: _centerCameraOnUser,
-                        child: Icon(Icons.my_location, color: AppTheme.textBlack),
-                      ),
+                      const SizedBox(height: 24),
                     ],
                   ),
             bottomNavigationBar: SafeArea(
@@ -516,6 +660,7 @@ class _HomePageState extends State<HomePage> {
                         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                         selectedIndex: vm.currentTab,
                         onDestinationSelected: (i) {
+                          _hideTooltip();
                           HapticFeedback.selectionClick();
                           vm.setTab(i);
                         },
@@ -537,6 +682,128 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
- 
+class _TooltipBubble extends StatefulWidget {
+  final String message;
+  const _TooltipBubble({Key? key, required this.message}) : super(key: key);
 
- 
+  @override
+  State<_TooltipBubble> createState() => _TooltipBubbleState();
+}
+
+class _TooltipBubbleState extends State<_TooltipBubble> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _offsetAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    _offsetAnimation = Tween<double>(begin: 0, end: 6).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _offsetAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(-_offsetAnimation.value, 0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.primaryMint, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  widget.message,
+                  style: const TextStyle(
+                    color: AppTheme.textBlack,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Transform.translate(
+                offset: const Offset(-1.5, 0),
+                child: CustomPaint(
+                  size: const Size(6, 12),
+                  painter: _BubbleArrowPainter(
+                    color: Colors.white,
+                    borderColor: AppTheme.primaryMint,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BubbleArrowPainter extends CustomPainter {
+  final Color color;
+  final Color borderColor;
+  final double strokeWidth;
+
+  _BubbleArrowPainter({
+    required this.color,
+    this.borderColor = Colors.transparent,
+    this.strokeWidth = 0.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    path.moveTo(0, 0);
+    path.lineTo(size.width, size.height / 2);
+    path.lineTo(0, size.height);
+    path.close();
+    canvas.drawPath(path, paint);
+
+    if (strokeWidth > 0 && borderColor != Colors.transparent) {
+      final borderPaint = Paint()
+        ..color = borderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+
+      final borderPath = Path();
+      borderPath.moveTo(0, 0);
+      borderPath.lineTo(size.width, size.height / 2);
+      borderPath.lineTo(0, size.height);
+      canvas.drawPath(borderPath, borderPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
