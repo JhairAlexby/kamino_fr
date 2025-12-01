@@ -6,27 +6,30 @@ class HomeCollapsedPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-      child: Container(
-        padding: const EdgeInsets.only(top: 6),
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 1.2,
-            colors: [Color(0xFF2C303A), AppTheme.textBlack],
-            stops: [0.0, 1.0],
+    return Container(
+      padding: const EdgeInsets.only(top: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF222831), // Fondo sólido gris oscuro para contraste
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+        border: Border(
+          top: BorderSide(color: AppTheme.primaryMint, width: 3), // Borde superior grueso color menta
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black,
+            blurRadius: 15,
+            spreadRadius: 2,
+            offset: Offset(0, -4), // Sombra fuerte hacia arriba
           ),
-          boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, -4))],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 32, height: 3, decoration: BoxDecoration(color: AppTheme.primaryMint, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 4),
-            const Text('Recomendaciones', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primaryMint)),
-          ],
-        ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 32, height: 3, decoration: BoxDecoration(color: AppTheme.primaryMint.withOpacity(0.5), borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 4),
+          const Text('Recomendaciones', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
+        ],
       ),
     );
   }
@@ -65,13 +68,14 @@ class HomeExpandedPanel extends StatelessWidget {
     return ClipRRect(
       borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
       child: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
+        decoration: BoxDecoration(
+          gradient: const RadialGradient(
             center: Alignment.center,
             radius: 1.2,
-            colors: [Color(0xFF2C303A), AppTheme.textBlack],
+            colors: [Color(0xFF2A3038), AppTheme.textBlack],
             stops: [0.0, 1.0],
           ),
+          boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 20, offset: Offset(0, -6))],
         ),
         child: SingleChildScrollView(
           controller: scrollController,

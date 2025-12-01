@@ -8,171 +8,244 @@ class GenerationModal extends StatefulWidget {
   State<GenerationModal> createState() => _GenerationModalState();
 }
 
-class _GenerationModalState extends State<GenerationModal> {
-  final List<String> _interests = ['Comida', 'Música', 'Caminata', 'Naturaleza', 'Nocturno'];
-  final List<String> _selectedInterests = [];
-  double _hours = 1.5;
+class _GenerationModalState extends State<GenerationModal> with SingleTickerProviderStateMixin {
+  int _selectedHours = 4;
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late TextEditingController _hoursController;
+
+  @override
+  void initState() {
+    super.initState();
+    _hoursController = TextEditingController(text: _selectedHours.toString());
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _hoursController.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.background,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      insetPadding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F172A), // Dark background
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+            // Header with close button
+            Stack(
+              alignment: Alignment.center,
               children: [
-                const Expanded(
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryMint,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
                   child: Text(
-                    '¿Qué te apetece descubrir hoy?',
+                    'Cuanto tiempo tienes\ndisponible?',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textBlack,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      height: 1.2,
+                      shadows: [
+                        Shadow(
+                          offset: const Offset(0, 1),
+                          blurRadius: 2,
+                          color: Colors.black.withOpacity(0.25),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: AppTheme.primaryMintDark),
-                  splashRadius: 20,
-                  onPressed: () => Navigator.of(context).pop(),
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF2C303A), Colors.black],
+                        ).createShader(bounds),
+                        blendMode: BlendMode.srcIn,
+                        child: const Icon(Icons.close, size: 20),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              width: 48,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryMint,
-                borderRadius: BorderRadius.circular(2),
+            const SizedBox(height: 32),
+
+            // 3D Clock Image
+            ScaleTransition(
+              scale: _scaleAnimation,
+              child: Container(
+                height: 200,
+                width: 200,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                ),
+                child: Image.asset(
+                  'assets/images/reloj3d.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    debugPrint('Error cargando assets/images/reloj3d.png: ' + error.toString());
+                    return const SizedBox.shrink();
+                  },
+                ),
               ),
             ),
-            const SizedBox(height: 10),
-            _buildChoiceChips(_interests, _selectedInterests),
-            const SizedBox(height: 20),
-            _buildSectionTitle('Tiempo disponible'),
-            _buildTimeSlider(),
-            const SizedBox(height: 20),
-            _buildSectionTitle('Ambiente'),
-            const SizedBox(height: 10),
-            _buildChoiceChips(['Opción 1', 'Opción 2', 'Opción 3'], []),
-            const SizedBox(height: 30),
+            const SizedBox(height: 32),
+
+            // Helper text
+            const Text(
+              'El siguiente dato nos ayudara\na generarte tu mejor eleccion',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Time selector
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Hrs',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.primaryMint,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  width: 60,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E0B36), // Dark purple/blue box
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: TextField(
+                    controller: _hoursController,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedHours = int.tryParse(value) ?? 0;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Disponibles',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.primaryMint,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 40),
+
+            // Action Button
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                // Add logic to handle destination search
               },
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
+                minimumSize: const Size(double.infinity, 56),
                 backgroundColor: AppTheme.primaryMint,
-                foregroundColor: AppTheme.textBlack,
+                foregroundColor: Colors.white,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(28),
                 ),
               ),
               child: const Text(
-                '¡Generar mi ruta!',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                'Buscar destino',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
+            const SizedBox(height: 16),
           ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppTheme.textBlack,
-      ),
-    );
-  }
-
-  Widget _buildChoiceChips(List<String> options, List<String> selected) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: options.map((option) {
-        final isSelected = selected.contains(option);
-        return ChoiceChip(
-          label: Text(option),
-          selected: isSelected,
-          onSelected: (bool val) {
-            setState(() {
-              if (val) {
-                selected.add(option);
-              } else {
-                selected.remove(option);
-              }
-            });
-          },
-          backgroundColor: AppTheme.lightMintBackground,
-          selectedColor: AppTheme.primaryMint,
-          labelStyle: TextStyle(
-            color: isSelected ? AppTheme.textBlack : AppTheme.textBlack,
-            fontWeight: FontWeight.w600,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
-              color: isSelected ? AppTheme.primaryMintDark : AppTheme.primaryMint.withValues(alpha: 0.35),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildTimeSlider() {
-    return SliderTheme(
-      data: SliderTheme.of(context).copyWith(
-        activeTrackColor: AppTheme.primaryMint,
-        inactiveTrackColor: AppTheme.lightMintBackground,
-        thumbColor: AppTheme.primaryMintDark,
-        overlayColor: AppTheme.primaryMint.withValues(alpha: 0.2),
-        trackHeight: 4,
-        activeTickMarkColor: AppTheme.primaryMintDark,
-        inactiveTickMarkColor: AppTheme.primaryMint.withValues(alpha: 0.4),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Slider(
-            value: _hours,
-            min: 1,
-            max: 8,
-            divisions: 7,
-            label: '${_hours.toStringAsFixed(1)} horas',
-            onChanged: (double value) => setState(() => _hours = value),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [Text('1 hora'), Text('8 horas')],
-            ),
-          ),
-        ],
       ),
     );
   }
