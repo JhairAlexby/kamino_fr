@@ -19,8 +19,10 @@ class _ProfilePageState extends State<ProfilePage> {
   int _selectedSection = 0;
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
-  final Set<String> _interests = {'parques'};
+  final Set<String> _interests = {};
   bool _areControllersInitialized = false;
+
+  
 
   @override
   void initState() {
@@ -41,11 +43,15 @@ class _ProfilePageState extends State<ProfilePage> {
     if (user != null && !_areControllersInitialized) {
       _firstNameCtrl.text = user.firstName;
       _lastNameCtrl.text = user.lastName;
+      _interests
+        ..clear()
+        ..addAll(user.preferredTags);
       _areControllersInitialized = true;
     } else if (user == null) {
       _areControllersInitialized = false;
       _firstNameCtrl.clear();
       _lastNameCtrl.clear();
+      _interests.clear();
     }
 
     return Scaffold(
@@ -120,8 +126,17 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             const SizedBox(height: 24),
                             ElevatedButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Datos guardados')));
+                              onPressed: () async {
+                                try {
+                                  await profileProvider.repo.updateProfile(
+                                    firstName: _firstNameCtrl.text.trim(),
+                                    lastName: _lastNameCtrl.text.trim(),
+                                  );
+                                  await profileProvider.repo.updateTags(_interests.toList());
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Datos actualizados')));
+                                } catch (_) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo actualizar los datos')));
+                                }
                               },
                               child: const Text('Guardar cambios'),
                             ),

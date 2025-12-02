@@ -57,6 +57,7 @@ class RegisterProvider extends ChangeNotifier {
       await _repo.register(firstName: firstName, lastName: lastName, email: email, password: password);
       await _repo.login(email: email, password: password);
       context.read<AppState>().login();
+      context.read<AppState>().requireProfileCompletionForSession();
       _isLoading = false;
       notifyListeners();
       if (!context.mounted) return;
