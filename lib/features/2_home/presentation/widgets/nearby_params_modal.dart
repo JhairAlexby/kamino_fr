@@ -3,7 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_provider.dart';
 
 class NearbyParamsModal extends StatefulWidget {
-  const NearbyParamsModal({super.key});
+  final double initialRadius;
+  final int initialLimit;
+  final bool initialUseManual;
+  final void Function({required bool useManual, required double radius, required int limit}) onSave;
+  const NearbyParamsModal({super.key, required this.initialRadius, required this.initialLimit, required this.initialUseManual, required this.onSave});
 
   @override
   State<NearbyParamsModal> createState() => _NearbyParamsModalState();
@@ -17,10 +21,9 @@ class _NearbyParamsModalState extends State<NearbyParamsModal> {
   @override
   void initState() {
     super.initState();
-    final vm = Provider.of<NearbyPlacesProvider>(context, listen: false);
-    _radiusCtrl = TextEditingController(text: vm.manualRadius.toString());
-    _limitCtrl = TextEditingController(text: vm.manualLimit.toString());
-    _useManual = vm.useManual;
+    _radiusCtrl = TextEditingController(text: widget.initialRadius.toString());
+    _limitCtrl = TextEditingController(text: widget.initialLimit.toString());
+    _useManual = widget.initialUseManual;
   }
 
   @override
@@ -32,8 +35,6 @@ class _NearbyParamsModalState extends State<NearbyParamsModal> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = Provider.of<NearbyPlacesProvider>(context, listen: false);
-    
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
@@ -68,10 +69,10 @@ class _NearbyParamsModalState extends State<NearbyParamsModal> {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () {
-                final r = double.tryParse(_radiusCtrl.text) ?? vm.manualRadius;
-                final l = int.tryParse(_limitCtrl.text) ?? vm.manualLimit;
-                vm.setManualParams(useManual: _useManual, radius: r, limit: l);
-                Navigator.of(context).pop(true); // Retorna true si se guardó
+                final r = double.tryParse(_radiusCtrl.text) ?? widget.initialRadius;
+                final l = int.tryParse(_limitCtrl.text) ?? widget.initialLimit;
+                widget.onSave(useManual: _useManual, radius: r, limit: l);
+                Navigator.of(context).pop(true);
               },
               child: const Text('Guardar'),
             ),

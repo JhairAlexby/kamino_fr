@@ -47,7 +47,7 @@ class Place {
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
       address: json['address'] as String? ?? '',
-      imageUrl: json['imageUrl'] as String? ?? '',
+      imageUrl: (json['imageUrl'] as String? ?? '').trim().replaceAll('`', ''),
       isHiddenGem: json['isHiddenGem'] as bool? ?? false,
       openingTime: json['openingTime'] as String?,
       closingTime: json['closingTime'] as String?,

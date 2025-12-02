@@ -18,9 +18,9 @@ import 'package:kamino_fr/features/2_home/data/places_api.dart';
 import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/map/places_layers.dart';
+import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import '../widgets/generation_modal.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/nearby_params_modal.dart';
-import 'package:kamino_fr/features/2_home/presentation/widgets/destination_confirmation_dialog.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/home_sliding_panel.dart';
 import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -45,6 +45,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   String _navMode = 'driving';
   DateTime? _lastRouteRecalc;
   Point? _currentDestination;
+  
+  double _userSpeed = 0.0;
   
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
@@ -133,21 +135,24 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       _lastCameraUpdate = now;
       final pos = Position(geoPos.longitude, geoPos.latitude);
       await _mapboxMap?.setCamera(CameraOptions(center: Point(coordinates: pos)));
+      _userSpeed = geoPos.speed;
       if (_routeCoords.isNotEmpty) {
         final off = _distanceToRouteMeters(geoPos.latitude, geoPos.longitude, _routeCoords);
         final shouldRecalc = off > 30.0 && (_lastRouteRecalc == null || now.difference(_lastRouteRecalc!).inMilliseconds > 3000);
         if (shouldRecalc && _currentDestination != null) {
           _lastRouteRecalc = now;
+          final profile = _detectNavProfile(_userSpeed);
+          _navMode = profile;
           await _calculateAndShowRoute(
             latOrigin: geoPos.latitude,
             lonOrigin: geoPos.longitude,
             latDest: _currentDestination!.coordinates.lat.toDouble(),
             lonDest: _currentDestination!.coordinates.lng.toDouble(),
-            mode: _navMode,
+            mode: profile,
           );
         } else if (_currentDestination != null) {
           final remaining = _remainingDistanceMeters(geoPos.latitude, geoPos.longitude, _routeCoords);
-          _updateEtaText(remaining, _navMode);
+          _updateEtaTextWithSpeed(remaining, _userSpeed);
         }
       }
     });
@@ -193,7 +198,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       _routeCoords = coords.map((c) => Position((c[0] as num).toDouble(), (c[1] as num).toDouble())).toList();
       await _drawRoute(_routeCoords);
       final distance = (r0['distance'] as num?)?.toDouble() ?? _pathLengthMeters(_routeCoords);
-      _updateEtaText(distance, mode);
+      _updateEtaTextWithSpeed(distance, _userSpeed);
     } catch (_) {}
   }
 
@@ -221,6 +226,28 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final s = d.inSeconds.remainder(60);
     final txt = h > 0 ? '${h}h ${m}m' : (m > 0 ? '${m}m ${s}s' : '${s}s');
     setState(() { _etaText = txt; });
+  }
+
+  void _updateEtaTextWithSpeed(double distanceMeters, double speed) {
+    double sp = speed;
+    if (sp.isNaN || sp <= 0) {
+      sp = _avgSpeedMetersPerSecond(_navMode);
+    }
+    if (sp <= 0) { setState(() { _etaText = ''; }); return; }
+    final seconds = (distanceMeters / sp).round();
+    final d = Duration(seconds: seconds);
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    final txt = h > 0 ? '${h}h ${m}m' : (m > 0 ? '${m}m ${s}s' : '${s}s');
+    setState(() { _etaText = txt; });
+  }
+
+  String _detectNavProfile(double speed) {
+    final sp = speed.isNaN ? 0.0 : speed;
+    if (sp < 2.5) return 'walking';
+    if (sp < 7.0) return 'cycling';
+    return 'driving';
   }
 
   double _avgSpeedMetersPerSecond(String mode) {
@@ -368,22 +395,22 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                 _enableUserLocation();
                                 _startFollow();
                                 _placesLayer = PlacesLayerController(map: controller);
+                                controller.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+                                try {
+                                  controller.compass.updateSettings(CompassSettings(enabled: false));
+                                } catch (_) {}
                               },
                               onTapListener: (gestureCtx) async {
                                 _hideTooltip();
                                 final p = gestureCtx.point;
                                 final lat = p.coordinates.lat.toDouble();
                                 final lon = p.coordinates.lng.toDouble();
-                                final selectedMode = await showDialog<String>(
-                                  context: context,
-                                  builder: (_) => DestinationConfirmationDialog(initialMode: _navMode),
-                                );
-                                if (selectedMode != null) {
-                                  _navMode = selectedMode;
-                                  _currentDestination = Point(coordinates: Position(lon, lat));
-                                  final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
-                                  await _calculateAndShowRoute(latOrigin: geoPos.latitude, lonOrigin: geoPos.longitude, latDest: lat, lonDest: lon, mode: _navMode);
-                                }
+                                _currentDestination = Point(coordinates: Position(lon, lat));
+                                final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+                                _userSpeed = geoPos.speed;
+                                final profile = _detectNavProfile(_userSpeed);
+                                _navMode = profile;
+                                await _calculateAndShowRoute(latOrigin: geoPos.latitude, lonOrigin: geoPos.longitude, latDest: lat, lonDest: lon, mode: profile);
                               },
                               onCameraChangeListener: (_) { _onCameraChanged(context); },
                               onStyleLoadedListener: (event) async {
@@ -479,20 +506,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     showModalBottomSheet(
                                       context: context,
                                       builder: (ctx) {
-                                        return Container(
-                                          padding: const EdgeInsets.all(16),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                                              const SizedBox(height: 6),
-                                              Text(place.category),
-                                              const SizedBox(height: 8),
-                                              Text(place.address),
-                                            ],
-                                          ),
-                                        );
+                                        return _PlaceSheetContent(place: place);
                                       },
                                     );
                                   });
@@ -514,10 +528,18 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                   onPressed: () async {
                                     _hideTooltip();
+                                    final npvm = Provider.of<NearbyPlacesProvider>(context, listen: false);
                                     final changed = await showModalBottomSheet<bool>(
                                       context: context,
                                       isScrollControlled: true,
-                                      builder: (_) => const NearbyParamsModal(),
+                                      builder: (_) => NearbyParamsModal(
+                                        initialRadius: npvm.manualRadius,
+                                        initialLimit: npvm.manualLimit,
+                                        initialUseManual: npvm.useManual,
+                                        onSave: ({required bool useManual, required double radius, required int limit}) {
+                                          npvm.setManualParams(useManual: useManual, radius: radius, limit: limit);
+                                        },
+                                      ),
                                     );
                                     if (changed == true) {
                                       _onCameraChanged(context);
@@ -537,29 +559,34 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   },
                                   child: const Icon(Icons.my_location, color: AppTheme.textBlack),
                                 ),
+                                const SizedBox(height: 8),
+                                InkWell(
+                                  onTap: () async {
+                                    _hideTooltip();
+                                    await _mapboxMap?.setCamera(CameraOptions(bearing: 0));
+                                  },
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.9),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: AppTheme.primaryMint, width: 1),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.15),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(Icons.explore, color: AppTheme.textBlack, size: 18),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                          if (_etaText.isNotEmpty)
-                            Positioned(
-                              top: 16,
-                              left: 16,
-                              right: 16,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.6),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Tiempo estimado de llegada', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                    Text(_etaText, style: const TextStyle(color: Colors.white)),
-                                  ],
-                                ),
-                              ),
-                            ),
+                          
                         ],
                       ),
                     ),
@@ -571,6 +598,30 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      if (_etaText.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppTheme.primaryMint.withOpacity(0.35), width: 1),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 6)),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.schedule, color: Colors.white, size: 18),
+                              const SizedBox(width: 8),
+                              const Text('ETA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                              const SizedBox(width: 8),
+                              Text(_etaText, style: const TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -681,6 +732,59 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _PlaceSheetContent extends StatelessWidget {
+  final Place place;
+  const _PlaceSheetContent({Key? key, required this.place}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final imgUrl = place.imageUrl;
+    final hasImage = imgUrl.isNotEmpty;
+    final opening = place.openingTime;
+    final closing = place.closingTime;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hasImage)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(imgUrl, height: 160, width: double.infinity, fit: BoxFit.cover),
+              ),
+            if (hasImage) const SizedBox(height: 12),
+            Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 6),
+            Text(place.category),
+            const SizedBox(height: 8),
+            if (place.tags.isNotEmpty)
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: place.tags.map((t) => Chip(label: Text(t))).toList(),
+              ),
+            if (place.tags.isNotEmpty) const SizedBox(height: 8),
+            if (place.description.isNotEmpty) Text(place.description),
+            const SizedBox(height: 8),
+            Text(place.address),
+            const SizedBox(height: 8),
+            if (opening != null || closing != null)
+              Row(
+                children: [
+                  const Icon(Icons.schedule, size: 18),
+                  const SizedBox(width: 6),
+                  Text('${opening ?? '-'} - ${closing ?? '-'}'),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
