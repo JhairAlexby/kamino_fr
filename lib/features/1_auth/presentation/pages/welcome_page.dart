@@ -11,8 +11,38 @@ import '../widgets/auth_bottom_prompt.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/welcome_provider.dart';
 
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
+
+  @override
+  State<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,17 +121,20 @@ class WelcomePage extends StatelessWidget {
                                 ),
                                 SizedBox(height: gapL * 3.0),
                                 // Imagen 3D del mapa
-                                FractionallySizedBox(
-                                  widthFactor: small ? 0.95 : 0.85,
-                                  child: Image.asset(
-                                    'assets/images/3dmapa.png',
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'assets/images/Welcome_img.png',
-                                        fit: BoxFit.contain,
-                                      );
-                                    },
+                                ScaleTransition(
+                                  scale: _scaleAnimation,
+                                  child: FractionallySizedBox(
+                                    widthFactor: small ? 0.95 : 0.85,
+                                    child: Image.asset(
+                                      'assets/images/3dmapa.png',
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/images/Welcome_img.png',
+                                          fit: BoxFit.contain,
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ),
                               ],

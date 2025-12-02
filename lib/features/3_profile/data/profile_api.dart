@@ -3,6 +3,8 @@ import 'package:kamino_fr/features/1_auth/data/models/user.dart';
 
 abstract class ProfileApi {
   Future<User> getProfile();
+  Future<User> updateProfile({String? gender, String? firstName, String? lastName, int? age});
+  Future<void> updateTags(List<String> tags);
 }
 
 class ProfileApiImpl implements ProfileApi {
@@ -14,6 +16,24 @@ class ProfileApiImpl implements ProfileApi {
     final res = await _dio.get('/api/users/profile');
     final data = res.data as Map<String, dynamic>;
     return User.fromJson(data);
+  }
+
+  @override
+  Future<User> updateProfile({String? gender, String? firstName, String? lastName, int? age}) async {
+    final body = <String, dynamic>{};
+    if (gender != null) body['gender'] = gender;
+    if (firstName != null) body['firstName'] = firstName;
+    if (lastName != null) body['lastName'] = lastName;
+    if (age != null) body['age'] = age;
+
+    final res = await _dio.put('/api/users/profile', data: body);
+    final data = res.data as Map<String, dynamic>;
+    return User.fromJson(data);
+  }
+
+  @override
+  Future<void> updateTags(List<String> tags) async {
+    await _dio.put('/api/users/profile/tags', data: {'tags': tags});
   }
 }
 

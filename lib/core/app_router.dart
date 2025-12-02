@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/welcome_page.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/register_page.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
+import 'package:kamino_fr/features/3_profile/data/profile_repository.dart';
 import 'package:kamino_fr/features/1_auth/presentation/pages/login_page.dart';
+import 'package:kamino_fr/features/1_auth/presentation/pages/complete_profile_page.dart';
 import 'package:kamino_fr/features/2_home/presentation/pages/home_page.dart';
 import 'package:kamino_fr/features/0_splash/presentation/pages/splash_page.dart';
 
@@ -11,15 +13,33 @@ enum AuthStatus { unknown, authenticated, unauthenticated }
 
 class AppState extends ChangeNotifier {
   final AuthRepository authRepository;
+  final ProfileRepository profileRepository;
   AuthStatus _status = AuthStatus.unknown;
+  bool _profileComplete = false;
   AuthStatus get status => _status;
-  AppState(this.authRepository) {
+  bool get profileComplete => _profileComplete;
+  AppState(this.authRepository, this.profileRepository) {
     checkAuthentication();
   }
 
   Future<void> checkAuthentication() async {
     final token = await authRepository.checkAuthStatus();
     _status = token != null ? AuthStatus.authenticated : AuthStatus.unauthenticated;
+    if (_status == AuthStatus.authenticated) {
+      try {
+        final u = await profileRepository.getProfile();
+        _profileComplete = (u.gender != null && u.gender!.isNotEmpty) && (u.preferredTags.isNotEmpty);
+      } catch (_) {
+        _profileComplete = false;
+      }
+    } else {
+      _profileComplete = false;
+    }
+    notifyListeners();
+  }
+
+  void markProfileComplete() {
+    _profileComplete = true;
     notifyListeners();
   }
 
@@ -52,7 +72,10 @@ GoRouter buildRouter(AppState appState) {
           state.matchedLocation == '/welcome';
 
       if (currentStatus == AuthStatus.authenticated) {
-        if (onAuthRoute || onSplash) return '/home';
+        if (!appState.profileComplete && state.matchedLocation != '/complete-profile') {
+          return '/complete-profile';
+        }
+        if (appState.profileComplete && (onAuthRoute || onSplash)) return '/home';
       } else {
         if (!onAuthRoute && !onSplash) return '/welcome';
       }
@@ -64,6 +87,7 @@ GoRouter buildRouter(AppState appState) {
       GoRoute(path: '/welcome', name: 'welcome', builder: (c, s) => const WelcomePage()),
       GoRoute(path: '/register', name: 'register', builder: (c, s) => const RegisterPage()),
       GoRoute(path: '/login', name: 'login', builder: (c, s) => const LoginPage()),
+      GoRoute(path: '/complete-profile', name: 'complete_profile', builder: (c, s) => const CompleteProfilePage()),
       GoRoute(path: '/home', name: 'home', builder: (c, s) => const HomePage()),
     ],
   );

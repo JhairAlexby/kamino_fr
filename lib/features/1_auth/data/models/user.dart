@@ -7,6 +7,8 @@ class User {
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? gender;
+  final List<String> preferredTags;
 
   User({
     required this.id,
@@ -17,7 +19,9 @@ class User {
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
-  });
+    this.gender,
+    List<String>? preferredTags,
+  }) : preferredTags = preferredTags ?? const [];
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -29,6 +33,8 @@ class User {
       isActive: json['isActive'] as bool,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      gender: json['gender'] as String?,
+      preferredTags: (json['preferredTags'] as List?)?.map((e) => e.toString()).toList() ?? const [],
     );
   }
 }

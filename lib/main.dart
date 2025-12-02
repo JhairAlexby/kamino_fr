@@ -38,10 +38,11 @@ class MyApp extends StatelessWidget {
     final http = HttpClient(config!, storage);
     final authApi = AuthApiImpl(http.dio);
     final authRepo = AuthRepository(api: authApi, storage: storage);
-    final appState = AppState(authRepo);
 
     final profileApi = ProfileApiImpl(http.dio);
     final profileRepo = ProfileRepository(api: profileApi);
+
+    final appState = AppState(authRepo, profileRepo);
 
     final router = buildRouter(appState);
 
