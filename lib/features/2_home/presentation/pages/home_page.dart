@@ -395,6 +395,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                 _enableUserLocation();
                                 _startFollow();
                                 _placesLayer = PlacesLayerController(map: controller);
+                                controller.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+                                try {
+                                  controller.compass.updateSettings(CompassSettings(enabled: false));
+                                } catch (_) {}
                               },
                               onTapListener: (gestureCtx) async {
                                 _hideTooltip();
@@ -555,29 +559,34 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   },
                                   child: const Icon(Icons.my_location, color: AppTheme.textBlack),
                                 ),
+                                const SizedBox(height: 8),
+                                InkWell(
+                                  onTap: () async {
+                                    _hideTooltip();
+                                    await _mapboxMap?.setCamera(CameraOptions(bearing: 0));
+                                  },
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.9),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: AppTheme.primaryMint, width: 1),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.15),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(Icons.explore, color: AppTheme.textBlack, size: 18),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                          if (_etaText.isNotEmpty)
-                            Positioned(
-                              top: 16,
-                              left: 16,
-                              right: 16,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.6),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Tiempo estimado de llegada', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                    Text(_etaText, style: const TextStyle(color: Colors.white)),
-                                  ],
-                                ),
-                              ),
-                            ),
+                          
                         ],
                       ),
                     ),
@@ -589,6 +598,30 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      if (_etaText.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppTheme.primaryMint.withOpacity(0.35), width: 1),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 6)),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.schedule, color: Colors.white, size: 18),
+                              const SizedBox(width: 8),
+                              const Text('ETA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                              const SizedBox(width: 8),
+                              Text(_etaText, style: const TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
