@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_theme.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/mint_dialog_shell.dart';
 
 class GenerationModal extends StatefulWidget {
   const GenerationModal({super.key});
@@ -8,7 +9,8 @@ class GenerationModal extends StatefulWidget {
   State<GenerationModal> createState() => _GenerationModalState();
 }
 
-class _GenerationModalState extends State<GenerationModal> with SingleTickerProviderStateMixin {
+class _GenerationModalState extends State<GenerationModal>
+    with SingleTickerProviderStateMixin {
   int _selectedHours = 4;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -44,92 +46,11 @@ class _GenerationModalState extends State<GenerationModal> with SingleTickerProv
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0F172A), // Dark background
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-            // Header with close button
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryMint,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    'Cuanto tiempo tienes\ndisponible?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      height: 1.2,
-                      shadows: [
-                        Shadow(
-                          offset: const Offset(0, 1),
-                          blurRadius: 2,
-                          color: Colors.black.withOpacity(0.25),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 12,
-                  top: 12,
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF2C303A), Colors.black],
-                        ).createShader(bounds),
-                        blendMode: BlendMode.srcIn,
-                        child: const Icon(Icons.close, size: 20),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
+        child: MintDialogShell(
+          title: 'Cuanto tiempo tienes\ndisponible?',
+          onClose: () => Navigator.of(context).pop(),
+          children: [
+            const SizedBox(height: 32), // Agregué 'const' y aseguré la coma
 
             // 3D Clock Image
             ScaleTransition(
@@ -144,7 +65,8 @@ class _GenerationModalState extends State<GenerationModal> with SingleTickerProv
                   'assets/images/reloj3d.png',
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
-                    debugPrint('Error cargando assets/images/reloj3d.png: ' + error.toString());
+                    debugPrint(
+                        'Error cargando assets/images/reloj3d.png: $error');
                     return const SizedBox.shrink();
                   },
                 ),
@@ -222,8 +144,7 @@ class _GenerationModalState extends State<GenerationModal> with SingleTickerProv
             // Action Button
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                // Add logic to handle destination search
+                Navigator.of(context).pop(true);
               },
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
@@ -244,7 +165,6 @@ class _GenerationModalState extends State<GenerationModal> with SingleTickerProv
             ),
             const SizedBox(height: 16),
           ],
-          ),
         ),
       ),
     );

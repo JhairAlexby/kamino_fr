@@ -16,11 +16,16 @@ import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/core/network/http_client.dart';
 import 'package:kamino_fr/features/2_home/data/places_api.dart';
 import 'package:kamino_fr/features/2_home/data/places_repository.dart';
+import 'package:kamino_fr/features/2_home/data/navigation_repository.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_provider.dart';
+import 'package:kamino_fr/features/2_home/presentation/provider/navigation_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/map/places_layers.dart';
 import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import '../widgets/generation_modal.dart';
-import 'package:kamino_fr/features/2_home/presentation/widgets/nearby_params_modal.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/home_floating_buttons.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/eta_indicator.dart';
+import 'package:kamino_fr/features/2_home/presentation/utils/map_style_helper.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/route_generation_overlay.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/home_sliding_panel.dart';
 import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -32,7 +37,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   MapboxMap? _mapboxMap;
   StreamSubscription<geo.Position>? _posSub;
   final bool _followUser = true;
@@ -40,10 +45,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   PlacesLayerController? _placesLayer;
   Uint8List? _userMarkerBytes;
   PolylineAnnotationManager? _routeManager;
-  List<Position> _routeCoords = [];
-  String _etaText = '';
-  String _navMode = 'driving';
-  DateTime? _lastRouteRecalc;
   Point? _currentDestination;
   
   double _userSpeed = 0.0;
@@ -125,7 +126,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     } catch (_) {}
   }
 
-  void _startFollow() {
+  void _startFollow(NavigationProvider navProvider) {
     _posSub?.cancel();
     _posSub = geo.Geolocator.getPositionStream(locationSettings: const geo.LocationSettings(accuracy: geo.LocationAccuracy.best, distanceFilter: 10))
         .listen((geoPos) async {
@@ -136,24 +137,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       final pos = Position(geoPos.longitude, geoPos.latitude);
       await _mapboxMap?.setCamera(CameraOptions(center: Point(coordinates: pos)));
       _userSpeed = geoPos.speed;
-      if (_routeCoords.isNotEmpty) {
-        final off = _distanceToRouteMeters(geoPos.latitude, geoPos.longitude, _routeCoords);
-        final shouldRecalc = off > 30.0 && (_lastRouteRecalc == null || now.difference(_lastRouteRecalc!).inMilliseconds > 3000);
-        if (shouldRecalc && _currentDestination != null) {
-          _lastRouteRecalc = now;
-          final profile = _detectNavProfile(_userSpeed);
-          _navMode = profile;
-          await _calculateAndShowRoute(
-            latOrigin: geoPos.latitude,
-            lonOrigin: geoPos.longitude,
-            latDest: _currentDestination!.coordinates.lat.toDouble(),
-            lonDest: _currentDestination!.coordinates.lng.toDouble(),
-            mode: profile,
-          );
-        } else if (_currentDestination != null) {
-          final remaining = _remainingDistanceMeters(geoPos.latitude, geoPos.longitude, _routeCoords);
-          _updateEtaTextWithSpeed(remaining, _userSpeed);
-        }
+      
+      // Actualizar ETA si hay ruta activa
+      if (navProvider.routeCoords.isNotEmpty) {
+        final remaining = navProvider.remainingDistanceMeters(geoPos.latitude, geoPos.longitude);
+        navProvider.updateEta(remaining, _userSpeed);
       }
     });
   }
@@ -184,24 +172,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
   }
 
-  Future<void> _calculateAndShowRoute({required double latOrigin, required double lonOrigin, required double latDest, required double lonDest, required String mode}) async {
-    try {
-      final cfg = Provider.of<EnvironmentConfig>(context, listen: false);
-      final url = 'https://api.mapbox.com/directions/v5/mapbox/$mode/$lonOrigin,$latOrigin;$lonDest,$latDest?geometries=geojson&access_token=${cfg.mapboxAccessToken}';
-      final resp = await Dio().get(url);
-      final data = resp.data as Map<String, dynamic>;
-      final routes = (data['routes'] as List?) ?? [];
-      if (routes.isEmpty) return;
-      final r0 = routes.first as Map<String, dynamic>;
-      final geometry = r0['geometry'] as Map<String, dynamic>;
-      final coords = (geometry['coordinates'] as List).cast<List>();
-      _routeCoords = coords.map((c) => Position((c[0] as num).toDouble(), (c[1] as num).toDouble())).toList();
-      await _drawRoute(_routeCoords);
-      final distance = (r0['distance'] as num?)?.toDouble() ?? _pathLengthMeters(_routeCoords);
-      _updateEtaTextWithSpeed(distance, _userSpeed);
-    } catch (_) {}
-  }
-
   Future<void> _drawRoute(List<Position> coords) async {
     if (_routeManager == null) return;
     await _routeManager!.deleteAll();
@@ -214,126 +184,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       lineOpacity: 0.8,
     );
     await _routeManager!.create(opt);
-  }
-
-  void _updateEtaText(double distanceMeters, String mode) {
-    final speed = _avgSpeedMetersPerSecond(mode);
-    if (speed <= 0) { setState(() { _etaText = ''; }); return; }
-    final seconds = (distanceMeters / speed).round();
-    final d = Duration(seconds: seconds);
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    final s = d.inSeconds.remainder(60);
-    final txt = h > 0 ? '${h}h ${m}m' : (m > 0 ? '${m}m ${s}s' : '${s}s');
-    setState(() { _etaText = txt; });
-  }
-
-  void _updateEtaTextWithSpeed(double distanceMeters, double speed) {
-    double sp = speed;
-    if (sp.isNaN || sp <= 0) {
-      sp = _avgSpeedMetersPerSecond(_navMode);
-    }
-    if (sp <= 0) { setState(() { _etaText = ''; }); return; }
-    final seconds = (distanceMeters / sp).round();
-    final d = Duration(seconds: seconds);
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    final s = d.inSeconds.remainder(60);
-    final txt = h > 0 ? '${h}h ${m}m' : (m > 0 ? '${m}m ${s}s' : '${s}s');
-    setState(() { _etaText = txt; });
-  }
-
-  String _detectNavProfile(double speed) {
-    final sp = speed.isNaN ? 0.0 : speed;
-    if (sp < 2.5) return 'walking';
-    if (sp < 7.0) return 'cycling';
-    return 'driving';
-  }
-
-  double _avgSpeedMetersPerSecond(String mode) {
-    switch (mode) {
-      case 'walking': return 1.4;
-      case 'cycling': return 4.16;
-      case 'driving':
-      default: return 13.9;
-    }
-  }
-
-  double _pathLengthMeters(List<Position> coords) {
-    if (coords.length < 2) return 0.0;
-    double sum = 0.0;
-    for (int i = 1; i < coords.length; i++) {
-      sum += _haversine(
-        coords[i - 1].lat.toDouble(),
-        coords[i - 1].lng.toDouble(),
-        coords[i].lat.toDouble(),
-        coords[i].lng.toDouble(),
-      );
-    }
-    return sum;
-  }
-
-  double _haversine(double lat1, double lon1, double lat2, double lon2) {
-    const double R = 6371000.0;
-    final dLat = _deg2rad(lat2 - lat1);
-    final dLon = _deg2rad(lon2 - lon1);
-    final a = (math.sin(dLat / 2) * math.sin(dLat / 2)) + math.cos(_deg2rad(lat1)) * math.cos(_deg2rad(lat2)) * (math.sin(dLon / 2) * math.sin(dLon / 2));
-    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return R * c;
-  }
-
-  double _deg2rad(double d) => d * 0.017453292519943295;
-
-  double _distanceToRouteMeters(double lat, double lon, List<Position> path) {
-    if (path.length < 2) return double.infinity;
-    double minD = double.infinity;
-    for (int i = 1; i < path.length; i++) {
-      final aLat = path[i - 1].lat.toDouble();
-      final aLon = path[i - 1].lng.toDouble();
-      final bLat = path[i].lat.toDouble();
-      final bLon = path[i].lng.toDouble();
-      final d = _pointToSegmentDistanceMeters(lat, lon, aLat, aLon, bLat, bLon);
-      if (d < minD) minD = d;
-    }
-    return minD;
-  }
-
-  double _pointToSegmentDistanceMeters(double pLat, double pLon, double aLat, double aLon, double bLat, double bLon) {
-    final ap = _vectorMeters(aLat, aLon, pLat, pLon);
-    final ab = _vectorMeters(aLat, aLon, bLat, bLon);
-    final abLen2 = ab.dx * ab.dx + ab.dy * ab.dy;
-    if (abLen2 == 0) return _haversine(pLat, pLon, aLat, aLon);
-    final t = ((ap.dx * ab.dx) + (ap.dy * ab.dy)) / abLen2;
-    final clampedT = t.clamp(0.0, 1.0);
-    final projLon = aLon + (bLon - aLon) * clampedT;
-    final projLat = aLat + (bLat - aLat) * clampedT;
-    return _haversine(pLat, pLon, projLat, projLon);
-  }
-
-  Offset _vectorMeters(double lat1, double lon1, double lat2, double lon2) {
-    final dx = _haversine(lat1, lon1, lat1, lon2);
-    final dy = _haversine(lat1, lon1, lat2, lon1);
-    final signX = lon2 >= lon1 ? 1.0 : -1.0;
-    final signY = lat2 >= lat1 ? 1.0 : -1.0;
-    return Offset(dx * signX, dy * signY);
-  }
-
-  double _remainingDistanceMeters(double lat, double lon, List<Position> path) {
-    if (path.length < 2) return 0.0;
-    int nearestIdx = 0;
-    double minD = double.infinity;
-    for (int i = 0; i < path.length; i++) {
-      final d = _haversine(lat, lon, path[i].lat.toDouble(), path[i].lng.toDouble());
-      if (d < minD) { minD = d; nearestIdx = i; }
-    }
-    double sum = 0.0;
-    for (int i = nearestIdx; i < path.length - 1; i++) {
-      sum += _haversine(
-        path[i].lat.toDouble(), path[i].lng.toDouble(),
-        path[i + 1].lat.toDouble(), path[i + 1].lng.toDouble(),
-      );
-    }
-    return sum;
   }
 
   @override
@@ -353,14 +203,21 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final http = HttpClient(config, SecureTokenStorage());
     final placesApi = PlacesApiImpl(http.dio);
     final placesRepo = PlacesRepository(api: placesApi, maxRetries: config.maxRetries);
+    final navRepo = NavigationRepository(http.dio, config.mapboxAccessToken);
 
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => NearbyPlacesProvider(repository: placesRepo)),
+        ChangeNotifierProvider(create: (_) => NavigationProvider(navRepo)),
       ],
-      child: Consumer<HomeProvider>(
-        builder: (context, vm, child) {
+      child: Consumer2<HomeProvider, NavigationProvider>(
+        builder: (context, vm, navVm, child) {
+          // Listener para dibujar la ruta cuando cambie en el provider
+          if (navVm.routeCoords.isNotEmpty && _mapboxMap != null) {
+            _drawRoute(navVm.routeCoords);
+          }
+          
           return Scaffold(
             backgroundColor: AppTheme.textBlack,
             body: SafeArea(
@@ -380,6 +237,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       collapsed: const HomeCollapsedPanel(),
                       panelBuilder: (sc) => HomeExpandedPanel(scrollController: sc),
                       body: Stack(
+                        alignment: Alignment.center,
                         children: [
                           Positioned.fill(
                             child: MapWidget(
@@ -393,7 +251,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               onMapCreated: (controller) {
                                 _mapboxMap = controller;
                                 _enableUserLocation();
-                                _startFollow();
+                                _startFollow(navVm);
                                 _placesLayer = PlacesLayerController(map: controller);
                                 controller.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
                                 try {
@@ -408,91 +266,21 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                 _currentDestination = Point(coordinates: Position(lon, lat));
                                 final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
                                 _userSpeed = geoPos.speed;
-                                final profile = _detectNavProfile(_userSpeed);
-                                _navMode = profile;
-                                await _calculateAndShowRoute(latOrigin: geoPos.latitude, lonOrigin: geoPos.longitude, latDest: lat, lonDest: lon, mode: profile);
+                                
+                                await navVm.calculateRoute(
+                                  latOrigin: geoPos.latitude, 
+                                  lonOrigin: geoPos.longitude, 
+                                  latDest: lat, 
+                                  lonDest: lon, 
+                                  currentSpeed: _userSpeed,
+                                  showOverlay: false,
+                                );
                               },
                               onCameraChangeListener: (_) { _onCameraChanged(context); },
                               onStyleLoadedListener: (event) async {
                                 await _applyLocationSettings();
                                 if (_mapboxMap != null) {
-                                  final style = _mapboxMap!.style;
-                                  await style.addSource(
-                                    RasterDemSource(
-                                      id: 'mapbox-dem',
-                                      url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-                                      tileSize: 512,
-                                      maxzoom: 14,
-                                      prefetchZoomDelta: 0,
-                                      tileRequestsDelay: 0.3,
-                                      tileNetworkRequestsDelay: 0.5,
-                                    ),
-                                  );
-                                  await style.setStyleTerrainProperty('source', 'mapbox-dem');
-                                  await style.setStyleTerrainProperty('exaggeration', 1.0);
-                                  await style.setStyleImportConfigProperty('basemap', 'lightPreset', 'dusk');
-                                  await style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', true);
-
-                                  // 1. Configurar Niebla (Atmósfera) para un horizonte suave
-                                  // Nota: La API de Flutter de Mapbox puede requerir un método diferente o json encode
-                                  // para propiedades complejas de estilo root como 'fog'.
-                                  // Si 'styleJSON' es de solo lectura o no funciona así, usamos setStyleLayerProperty si fuera una capa,
-                                  // pero fog es propiedad raíz. Intentaremos con una llamada directa si existe, o lo omitimos si la API no lo expone.
-                                  // Al revisar la API, para propiedades root genéricas se suele usar style.styleJSON = ... pero es un getter.
-                                  // Usaremos setStyleJSONProperty si existe en una extensión, pero el error dice que no.
-                                  // La alternativa correcta es usar style.setStyleURI o cargar el JSON completo, pero para un cambio puntual:
-                                  // Intentaremos omitir la niebla si la API estricta no lo permite fácilmente sin recargar todo el estilo.
-                                  // O buscamos si hay un método setStyleProperty específico.
-                                  // Investigando: style.setStyleProperty("fog", ...)
-                                  /*
-                                  await style.setStyleProperty('fog', {
-                                    "range": [0.5, 10],
-                                    "color": "rgb(24, 26, 32)",
-                                    "horizon-blend": 0.2
-                                  });
-                                  */
-
-                                  // 2. Agregar capa de Edificios 3D
-                                  try {
-                                    if (await style.styleSourceExists('composite')) {
-                                      final buildingsLayer = FillExtrusionLayer(
-                                        id: '3d-buildings',
-                                        sourceId: 'composite',
-                                        sourceLayer: 'building',
-                                        minZoom: 15.0,
-                                        filter: ['==', ['get', 'extrude'], 'true'],
-                                        fillExtrusionColor: Colors.grey.shade800.value,
-                                        fillExtrusionOpacity: 0.6,
-                                        // Mapbox Flutter v10+ espera expresiones como List<Object?> o similares, no List<String> directo si el tipo es double?
-                                        // Requerimos castear o usar la clase Expression si está disponible, o pasar la lista como dynamic.
-                                        // Sin embargo, el error dice "List<String> can't be assigned to double?".
-                                        // Esto significa que la propiedad fillExtrusionHeight espera un valor fijo (double) y no una expresión (List) en este wrapper.
-                                        // Para usar expresiones (data-driven styling), debemos usar propiedades que acepten expresiones.
-                                        // En el SDK de Flutter v2/v3, algunas propiedades son tipadas estrictas.
-                                        // Si no permite expresiones, usaremos un valor fijo o lo omitiremos.
-                                        // Pero la extrusión 3D sin altura variable no tiene sentido.
-                                        // Verificamos si hay propiedades 'Expression' o si debemos usar 'addLayer' con un JSON crudo.
-                                        // Al ser FillExtrusionLayer una clase tipada, revisemos sus campos.
-                                        // Si fillExtrusionHeight es double?, entonces no soporta expresiones directamente en este constructor.
-                                        // Intentaremos usar un valor fijo por ahora para eliminar el error,
-                                        // o mejor, eliminamos la capa 3D temporalmente si no podemos usar alturas reales,
-                                        // ya que edificios planos elevados se ven mal.
-                                        //
-                                        // CORRECCIÓN: La librería mapbox_maps_flutter suele tener soporte para expresiones.
-                                        // El problema es que pasé `['get', 'height']` (List<String>) a un campo que el linter dice que es `double?`.
-                                        // Esto sugiere que la versión de la librería que usamos tiene bindings que fuerzan tipos escalares para estas propiedades
-                                        // o estoy usando el constructor incorrecto.
-                                        //
-                                        // Solución rápida: Usar valores fijos para compilar, y luego investigar si podemos usar addStyleLayer con JSON crudo.
-                                        fillExtrusionHeight: 20.0, // Altura fija temporal para prueba
-                                        fillExtrusionBase: 0.0,
-                                        fillExtrusionAmbientOcclusionIntensity: 0.3,
-                                      );
-                                      await style.addLayer(buildingsLayer);
-                                    }
-                                  } catch (e) {
-                                    debugPrint('Error agregando edificios 3D: $e');
-                                  }
+                                  await MapStyleHelper.configureMapStyle(_mapboxMap!);
 
                                   await _placesLayer?.ensureInitialized();
                                   _routeManager ??= await _mapboxMap!.annotations.createPolylineAnnotationManager();
@@ -518,57 +306,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                           Positioned(
                             right: 16,
                             top: MediaQuery.of(context).padding.top,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                FloatingActionButton(
-                                  heroTag: 'settings_btn',
-                                  backgroundColor: AppTheme.primaryMint,
-                                  elevation: 4,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                  onPressed: () async {
-                                    _hideTooltip();
-                                    final vmNearby = context.read<NearbyPlacesProvider>();
-                                    final changed = await showModalBottomSheet<bool>(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                                      ),
-                                      builder: (ctx) => NearbyParamsModal(
-                                        initialRadius: vmNearby.manualRadius,
-                                        initialLimit: vmNearby.manualLimit,
-                                        initialUseManual: vmNearby.useManual,
-                                        onSave: ({required bool useManual, required double radius, required int limit}) {
-                                          vmNearby.setManualParams(useManual: useManual, radius: radius, limit: limit);
-                                        },
-                                      ),
-                                    );
-                                    if (changed == true) {
-                                      _onCameraChanged(context);
-                                    }
-                                  },
-                                  child: const Icon(Icons.tune, color: AppTheme.textBlack),
-                                ),
-                                const SizedBox(height: 12),
-                                FloatingActionButton(
-                                  heroTag: 'location_btn',
-                                  backgroundColor: AppTheme.primaryMint,
-                                  elevation: 4,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                  onPressed: () {
-                                    _hideTooltip();
-                                    _centerCameraOnUser();
-                                  },
-                                  child: const Icon(Icons.my_location, color: AppTheme.textBlack),
-                                ),
-                                const SizedBox(height: 8),
-                                const SizedBox.shrink(),
-                              ],
+                            child: HomeFloatingButtons(
+                              onHideTooltip: _hideTooltip,
+                              onCenterCamera: () => _centerCameraOnUser(),
+                              onCameraChanged: (ctx) => _onCameraChanged(ctx),
                             ),
                           ),
-                          
+                          RouteGenerationOverlay(isVisible: navVm.isGeneratingRouteOverlay),
                         ],
                       ),
                     ),
@@ -580,30 +324,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      if (_etaText.isNotEmpty) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppTheme.primaryMint.withOpacity(0.35), width: 1),
-                            boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 6)),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.schedule, color: Colors.white, size: 18),
-                              const SizedBox(width: 8),
-                              const Text('ETA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                              const SizedBox(width: 8),
-                              Text(_etaText, style: const TextStyle(color: Colors.white)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
+                      EtaIndicator(
+                        etaText: navVm.etaText,
+                        navMode: navVm.navMode,
+                      ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -614,9 +338,29 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                           ],
                           // Botón principal animado (fijo)
                           GestureDetector(
-                            onTap: () {
+                            onTap: () async {
                               _hideTooltip();
-                              showDialog(context: context, builder: (context) => const GenerationModal());
+                              final confirmed = await showDialog<bool>(context: context, builder: (context) => const GenerationModal());
+                              if (confirmed == true) {
+                                try {
+                                  final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+                                  // Simulación: Destino "sorpresa" generado por la IA (offset arbitrario para demo)
+                                  final destLat = geoPos.latitude + 0.005;
+                                  final destLon = geoPos.longitude + 0.005;
+                                  
+                                  await navVm.calculateRoute(
+                                    latOrigin: geoPos.latitude,
+                                    lonOrigin: geoPos.longitude,
+                                    latDest: destLat,
+                                    lonDest: destLon,
+                                    currentSpeed: geoPos.speed,
+                                    showOverlay: true, // Activa la animación de "Generando Ruta"
+                                    destinationName: "Destino Sorpresa"
+                                  );
+                                } catch (e) {
+                                  debugPrint("Error al iniciar ruta IA: $e");
+                                }
+                              }
                             },
                         child: AnimatedBuilder(
                           animation: _scaleAnimation,

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  
-  // --- TU NUEVA PALETA ---
   static const Color primaryMint = Color(0xFF85E6C0);
   static const Color primaryMintDark = Color(0xFF6BB39B);
   static const Color background = Color(0xFFF7F4E8); 
@@ -11,21 +9,17 @@ class AppTheme {
 
   static ThemeData getTheme() {
     return ThemeData(
-      // 1. Fuente
       fontFamily: 'Inter',
-      
-      // 2. Esquema de colores principal (Corregido)
       primaryColor: primaryMint,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryMint,
         primary: primaryMint,
         surface: background, 
-        onSurface: textBlack, // Color de texto sobre el fondo
+        onSurface: textBlack, 
       ),
       
-      scaffoldBackgroundColor: background, // Fondo de todas las pantallas
+      scaffoldBackgroundColor: background, 
 
-      // 3. Tema de botones
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryMint,
@@ -40,7 +34,6 @@ class AppTheme {
         ),
       ),
       
-      // 4. Tema de campos de texto (Inputs)
       inputDecorationTheme: InputDecorationTheme(
          border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
@@ -56,7 +49,6 @@ class AppTheme {
          ),
       ),
 
-      // 5. Tema de texto principal
       textTheme: const TextTheme(
         // Body text (Texto normal - ahora en negrita w600)
         bodyLarge: TextStyle(color: textBlack, fontWeight: FontWeight.w600),
@@ -81,7 +73,6 @@ class AppTheme {
         labelSmall: TextStyle(color: textBlack, fontWeight: FontWeight.w700),
       ),
       
-      // 6. Tema de AppBar (Corregido)
       appBarTheme: const AppBarTheme(
         backgroundColor: background, 
         foregroundColor: textBlack, 
