@@ -345,7 +345,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       maxHeight: MediaQuery.of(context).size.height * 0.75,
                       margin: const EdgeInsets.only(bottom: 0),
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-                      color: Colors.transparent,
+                      color: const Color(0xFF242A33),
+                      boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, -8))],
+                      backdropEnabled: true,
+                      backdropOpacity: 0.2,
                       onPanelSlide: (_) => _hideTooltip(),
                       collapsed: const HomeCollapsedPanel(),
                       panelBuilder: (sc) => HomeExpandedPanel(scrollController: sc),
@@ -615,7 +618,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       ),
                       ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 60),
                     ],
                   ),
             bottomNavigationBar: SafeArea(
@@ -625,14 +628,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: RadialGradient(
+                    decoration: BoxDecoration(
+                      gradient: const RadialGradient(
                         center: Alignment.center,
                         radius: 1.2,
                         colors: [Color(0xFF2C303A), AppTheme.textBlack],
                         stops: [0.0, 1.0],
                       ),
-                      boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, -4))],
+                      boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, -4))],
+                      border: Border(top: BorderSide(color: AppTheme.primaryMint.withOpacity(0.25), width: 1)),
                     ),
                     child: NavigationBarTheme(
                       data: NavigationBarThemeData(
@@ -643,7 +647,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                         labelTextStyle: MaterialStateProperty.resolveWith((states) {
                           final selected = states.contains(MaterialState.selected);
                           return TextStyle(
-                            color: AppTheme.primaryMint.withOpacity(selected ? 1.0 : 0.65),
+                            color: selected ? AppTheme.primaryMint : Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: selected ? 13 : 12,
                           );
@@ -651,7 +655,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                         iconTheme: MaterialStateProperty.resolveWith((states) {
                           final selected = states.contains(MaterialState.selected);
                           return IconThemeData(
-                            color: AppTheme.primaryMint.withOpacity(selected ? 1.0 : 0.65),
+                            color: selected ? AppTheme.primaryMint : Colors.white,
                             size: selected ? 28 : 26,
                           );
                         }),
