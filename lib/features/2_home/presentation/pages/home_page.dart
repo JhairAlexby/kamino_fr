@@ -47,6 +47,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   DateTime? _lastRouteRecalc;
   Point? _currentDestination;
   
+  double _userSpeed = 0.0;
+  
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
   bool _showTooltip = true;
@@ -134,21 +136,24 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       _lastCameraUpdate = now;
       final pos = Position(geoPos.longitude, geoPos.latitude);
       await _mapboxMap?.setCamera(CameraOptions(center: Point(coordinates: pos)));
+      _userSpeed = geoPos.speed;
       if (_routeCoords.isNotEmpty) {
         final off = _distanceToRouteMeters(geoPos.latitude, geoPos.longitude, _routeCoords);
         final shouldRecalc = off > 30.0 && (_lastRouteRecalc == null || now.difference(_lastRouteRecalc!).inMilliseconds > 3000);
         if (shouldRecalc && _currentDestination != null) {
           _lastRouteRecalc = now;
+          final profile = _detectNavProfile(_userSpeed);
+          _navMode = profile;
           await _calculateAndShowRoute(
             latOrigin: geoPos.latitude,
             lonOrigin: geoPos.longitude,
             latDest: _currentDestination!.coordinates.lat.toDouble(),
             lonDest: _currentDestination!.coordinates.lng.toDouble(),
-            mode: _navMode,
+            mode: profile,
           );
         } else if (_currentDestination != null) {
           final remaining = _remainingDistanceMeters(geoPos.latitude, geoPos.longitude, _routeCoords);
-          _updateEtaText(remaining, _navMode);
+          _updateEtaTextWithSpeed(remaining, _userSpeed);
         }
       }
     });
@@ -194,7 +199,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       _routeCoords = coords.map((c) => Position((c[0] as num).toDouble(), (c[1] as num).toDouble())).toList();
       await _drawRoute(_routeCoords);
       final distance = (r0['distance'] as num?)?.toDouble() ?? _pathLengthMeters(_routeCoords);
-      _updateEtaText(distance, mode);
+      _updateEtaTextWithSpeed(distance, _userSpeed);
     } catch (_) {}
   }
 
@@ -222,6 +227,28 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final s = d.inSeconds.remainder(60);
     final txt = h > 0 ? '${h}h ${m}m' : (m > 0 ? '${m}m ${s}s' : '${s}s');
     setState(() { _etaText = txt; });
+  }
+
+  void _updateEtaTextWithSpeed(double distanceMeters, double speed) {
+    double sp = speed;
+    if (sp.isNaN || sp <= 0) {
+      sp = _avgSpeedMetersPerSecond(_navMode);
+    }
+    if (sp <= 0) { setState(() { _etaText = ''; }); return; }
+    final seconds = (distanceMeters / sp).round();
+    final d = Duration(seconds: seconds);
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    final txt = h > 0 ? '${h}h ${m}m' : (m > 0 ? '${m}m ${s}s' : '${s}s');
+    setState(() { _etaText = txt; });
+  }
+
+  String _detectNavProfile(double speed) {
+    final sp = speed.isNaN ? 0.0 : speed;
+    if (sp < 2.5) return 'walking';
+    if (sp < 7.0) return 'cycling';
+    return 'driving';
   }
 
   double _avgSpeedMetersPerSecond(String mode) {
@@ -375,16 +402,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                 final p = gestureCtx.point;
                                 final lat = p.coordinates.lat.toDouble();
                                 final lon = p.coordinates.lng.toDouble();
-                                final selectedMode = await showDialog<String>(
-                                  context: context,
-                                  builder: (_) => DestinationConfirmationDialog(initialMode: _navMode),
-                                );
-                                if (selectedMode != null) {
-                                  _navMode = selectedMode;
-                                  _currentDestination = Point(coordinates: Position(lon, lat));
-                                  final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
-                                  await _calculateAndShowRoute(latOrigin: geoPos.latitude, lonOrigin: geoPos.longitude, latDest: lat, lonDest: lon, mode: _navMode);
-                                }
+                                _currentDestination = Point(coordinates: Position(lon, lat));
+                                final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+                                _userSpeed = geoPos.speed;
+                                final profile = _detectNavProfile(_userSpeed);
+                                _navMode = profile;
+                                await _calculateAndShowRoute(latOrigin: geoPos.latitude, lonOrigin: geoPos.longitude, latDest: lat, lonDest: lon, mode: profile);
                               },
                               onCameraChangeListener: (_) { _onCameraChanged(context); },
                               onStyleLoadedListener: (event) async {
