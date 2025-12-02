@@ -8,5 +8,13 @@ class ProfileRepository {
   Future<User> getProfile() async {
     return await api.getProfile();
   }
+
+  Future<User> updateProfile({String? gender, String? firstName, String? lastName, int? age}) async {
+    return await api.updateProfile(gender: gender, firstName: firstName, lastName: lastName, age: age);
+  }
+
+  Future<void> updateTags(List<String> tags) async {
+    await api.updateTags(tags);
+  }
 }
 

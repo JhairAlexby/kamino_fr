@@ -30,6 +30,12 @@ class _FakeAuthApi implements AuthApi {
 class _FakeProfileApi implements ProfileApi {
   @override
   Future<User> getProfile() async => throw UnimplementedError();
+
+  @override
+  Future<User> updateProfile({String? gender, String? firstName, String? lastName, int? age}) async => throw UnimplementedError();
+
+  @override
+  Future<void> updateTags(List<String> tags) async => throw UnimplementedError();
 }
 
 class _MemoryTokenStorage implements TokenStorage {
@@ -60,7 +66,7 @@ void main() {
     final repo = _FakeRepo(user);
     final storage = _MemoryTokenStorage()..a = 'tkn';
     final authRepo = AuthRepository(api: _FakeAuthApi(), storage: storage);
-    final appState = AppState(authRepo);
+    final appState = AppState(authRepo, repo);
     final vm = ProfileProvider(repo: repo, storage: storage, appState: appState);
     await vm.loadProfile();
     expect(vm.user, isNotNull);

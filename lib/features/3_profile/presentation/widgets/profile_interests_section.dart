@@ -42,11 +42,18 @@ class ProfileInterestsSection extends StatelessWidget {
             runSpacing: 10,
             children: [
               for (final opt in const [
-                'parques',
-                'restaurantes',
-                'urbano',
-                'cine',
-                'deportivo'
+                'Tradicional',
+                'Música',
+                'Cultura',
+                'Educativo',
+                'Arte',
+                'Naturaleza',
+                'Gastronomía',
+                'Aventura',
+                'Familia',
+                'Ciencia',
+                'Historia',
+                'Tecnología'
               ])
                 TweenAnimationBuilder<double>(
                   duration: const Duration(milliseconds: 200),

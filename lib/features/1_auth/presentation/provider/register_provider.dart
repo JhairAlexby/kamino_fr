@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:kamino_fr/core/app_router.dart';
 
 class RegisterProvider extends ChangeNotifier {
   RegisterProvider(this._repo);
@@ -52,11 +54,13 @@ class RegisterProvider extends ChangeNotifier {
       final lastName = lastNameController.text.trim();
       final email = emailController.text.trim();
       final password = passwordController.text;
-      await _repo.register(firstName: firstName, lastName: lastName, email: email, password: password, gender: gender);
+      await _repo.register(firstName: firstName, lastName: lastName, email: email, password: password);
+      await _repo.login(email: email, password: password);
+      context.read<AppState>().login();
       _isLoading = false;
       notifyListeners();
       if (!context.mounted) return;
-      context.go('/login');
+      context.go('/complete-profile');
     } catch (e) {
       _isLoading = false;
       notifyListeners();

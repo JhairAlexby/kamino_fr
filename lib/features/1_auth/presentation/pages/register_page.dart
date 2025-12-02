@@ -13,7 +13,7 @@ import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_primary_butt
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_logo.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_bottom_prompt.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/register_names_section.dart';
-import 'package:kamino_fr/features/1_auth/presentation/widgets/register_gender_dropdown.dart';
+
 import 'package:kamino_fr/features/1_auth/presentation/widgets/register_password_section.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -134,12 +134,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                                         SizedBox(height: gapS),
                                         
-                                        RegisterGenderDropdown(
-                                          value: provider.gender,
-                                          onChanged: (v) {
-                                            if (v != null) provider.setGender(v);
-                                          },
-                                        ),
                                         SizedBox(height: gapS),
                                         
                                         RegisterPasswordSection(
