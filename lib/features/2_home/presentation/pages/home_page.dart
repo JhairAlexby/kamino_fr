@@ -21,7 +21,6 @@ import 'package:kamino_fr/features/2_home/presentation/map/places_layers.dart';
 import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import '../widgets/generation_modal.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/nearby_params_modal.dart';
-import 'package:kamino_fr/features/2_home/presentation/widgets/destination_confirmation_dialog.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/home_sliding_panel.dart';
 import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -525,10 +524,18 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                   onPressed: () async {
                                     _hideTooltip();
+                                    final npvm = Provider.of<NearbyPlacesProvider>(context, listen: false);
                                     final changed = await showModalBottomSheet<bool>(
                                       context: context,
                                       isScrollControlled: true,
-                                      builder: (_) => const NearbyParamsModal(),
+                                      builder: (_) => NearbyParamsModal(
+                                        initialRadius: npvm.manualRadius,
+                                        initialLimit: npvm.manualLimit,
+                                        initialUseManual: npvm.useManual,
+                                        onSave: ({required bool useManual, required double radius, required int limit}) {
+                                          npvm.setManualParams(useManual: useManual, radius: radius, limit: limit);
+                                        },
+                                      ),
                                     );
                                     if (changed == true) {
                                       _onCameraChanged(context);
