@@ -18,6 +18,7 @@ import 'package:kamino_fr/features/2_home/data/places_api.dart';
 import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/map/places_layers.dart';
+import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import '../widgets/generation_modal.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/nearby_params_modal.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/destination_confirmation_dialog.dart';
@@ -479,20 +480,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     showModalBottomSheet(
                                       context: context,
                                       builder: (ctx) {
-                                        return Container(
-                                          padding: const EdgeInsets.all(16),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                                              const SizedBox(height: 6),
-                                              Text(place.category),
-                                              const SizedBox(height: 8),
-                                              Text(place.address),
-                                            ],
-                                          ),
-                                        );
+                                        return _PlaceSheetContent(place: place);
                                       },
                                     );
                                   });
@@ -681,6 +669,59 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _PlaceSheetContent extends StatelessWidget {
+  final Place place;
+  const _PlaceSheetContent({Key? key, required this.place}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final imgUrl = place.imageUrl;
+    final hasImage = imgUrl.isNotEmpty;
+    final opening = place.openingTime;
+    final closing = place.closingTime;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hasImage)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(imgUrl, height: 160, width: double.infinity, fit: BoxFit.cover),
+              ),
+            if (hasImage) const SizedBox(height: 12),
+            Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 6),
+            Text(place.category),
+            const SizedBox(height: 8),
+            if (place.tags.isNotEmpty)
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: place.tags.map((t) => Chip(label: Text(t))).toList(),
+              ),
+            if (place.tags.isNotEmpty) const SizedBox(height: 8),
+            if (place.description.isNotEmpty) Text(place.description),
+            const SizedBox(height: 8),
+            Text(place.address),
+            const SizedBox(height: 8),
+            if (opening != null || closing != null)
+              Row(
+                children: [
+                  const Icon(Icons.schedule, size: 18),
+                  const SizedBox(width: 6),
+                  Text('${opening ?? '-'} - ${closing ?? '-'}'),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
