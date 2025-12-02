@@ -528,16 +528,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                   onPressed: () async {
                                     _hideTooltip();
-                                    final npvm = Provider.of<NearbyPlacesProvider>(context, listen: false);
+                                    final vmNearby = context.read<NearbyPlacesProvider>();
                                     final changed = await showModalBottomSheet<bool>(
                                       context: context,
                                       isScrollControlled: true,
-                                      builder: (_) => NearbyParamsModal(
-                                        initialRadius: npvm.manualRadius,
-                                        initialLimit: npvm.manualLimit,
-                                        initialUseManual: npvm.useManual,
+                                      backgroundColor: Colors.transparent,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                      ),
+                                      builder: (ctx) => NearbyParamsModal(
+                                        initialRadius: vmNearby.manualRadius,
+                                        initialLimit: vmNearby.manualLimit,
+                                        initialUseManual: vmNearby.useManual,
                                         onSave: ({required bool useManual, required double radius, required int limit}) {
-                                          npvm.setManualParams(useManual: useManual, radius: radius, limit: limit);
+                                          vmNearby.setManualParams(useManual: useManual, radius: radius, limit: limit);
                                         },
                                       ),
                                     );
@@ -560,29 +564,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   child: const Icon(Icons.my_location, color: AppTheme.textBlack),
                                 ),
                                 const SizedBox(height: 8),
-                                InkWell(
-                                  onTap: () async {
-                                    _hideTooltip();
-                                    await _mapboxMap?.setCamera(CameraOptions(bearing: 0));
-                                  },
-                                  child: Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.9),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: AppTheme.primaryMint, width: 1),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.15),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(Icons.explore, color: AppTheme.textBlack, size: 18),
-                                  ),
-                                ),
+                                const SizedBox.shrink(),
                               ],
                             ),
                           ),

@@ -79,6 +79,7 @@ class CompleteProfileProvider extends ChangeNotifier {
       notifyListeners();
       if (context.mounted) {
         context.read<AppState>().markProfileComplete();
+        context.read<AppState>().clearRequireProfileCompletion();
         context.go('/home');
       }
     } catch (e) {

@@ -16,8 +16,10 @@ class AppState extends ChangeNotifier {
   final ProfileRepository profileRepository;
   AuthStatus _status = AuthStatus.unknown;
   bool _profileComplete = false;
+  bool _requireCompletion = false;
   AuthStatus get status => _status;
   bool get profileComplete => _profileComplete;
+  bool get requireCompletion => _requireCompletion;
   AppState(this.authRepository, this.profileRepository) {
     checkAuthentication();
   }
@@ -43,6 +45,16 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void requireProfileCompletionForSession() {
+    _requireCompletion = true;
+    notifyListeners();
+  }
+
+  void clearRequireProfileCompletion() {
+    _requireCompletion = false;
+    notifyListeners();
+  }
+
   void login() {
     _status = AuthStatus.authenticated;
     notifyListeners();
@@ -51,6 +63,7 @@ class AppState extends ChangeNotifier {
   Future<void> logout() async {
     await authRepository.logout();
     _status = AuthStatus.unauthenticated;
+    _requireCompletion = false;
     notifyListeners();
   }
 }
@@ -72,7 +85,7 @@ GoRouter buildRouter(AppState appState) {
           state.matchedLocation == '/welcome';
 
       if (currentStatus == AuthStatus.authenticated) {
-        if (!appState.profileComplete && state.matchedLocation != '/complete-profile') {
+        if (appState.requireCompletion && !appState.profileComplete && state.matchedLocation != '/complete-profile') {
           return '/complete-profile';
         }
         if (appState.profileComplete && (onAuthRoute || onSplash)) return '/home';

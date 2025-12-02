@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_provider.dart';
+import 'package:kamino_fr/core/app_theme.dart';
+import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_input.dart';
+import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_primary_button.dart';
 
 class NearbyParamsModal extends StatefulWidget {
   final double initialRadius;
@@ -38,6 +39,15 @@ class _NearbyParamsModalState extends State<NearbyParamsModal> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.3,
+            colors: [Color(0xFF2C303A), AppTheme.textBlack],
+            stops: [0.0, 1.0],
+          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -45,7 +55,13 @@ class _NearbyParamsModalState extends State<NearbyParamsModal> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Usar parámetros manuales'),
+                Text(
+                  'Usar parámetros manuales',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
                 Switch(
                   value: _useManual,
                   onChanged: (v) {
@@ -56,25 +72,31 @@ class _NearbyParamsModalState extends State<NearbyParamsModal> {
                 ),
               ],
             ),
-            TextField(
+            AuthInput(
               controller: _radiusCtrl,
+              hintText: 'Ingresa radio',
+              labelText: 'Radio (km)',
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Radio (km)'),
-            ),
-            TextField(
-              controller: _limitCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Límite (lugares)'),
             ),
             const SizedBox(height: 12),
-            ElevatedButton(
+            const SizedBox(height: 12),
+            AuthInput(
+              controller: _limitCtrl,
+              hintText: 'Ingresa límite',
+              labelText: 'Límite (lugares)',
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 12),
+            const SizedBox(height: 12),
+            AuthPrimaryButton(
+              text: 'Guardar',
+              isLoading: false,
               onPressed: () {
                 final r = double.tryParse(_radiusCtrl.text) ?? widget.initialRadius;
                 final l = int.tryParse(_limitCtrl.text) ?? widget.initialLimit;
                 widget.onSave(useManual: _useManual, radius: r, limit: l);
                 Navigator.of(context).pop(true);
               },
-              child: const Text('Guardar'),
             ),
           ],
         ),
