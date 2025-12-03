@@ -190,16 +190,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       openingTime: '06:00',
       closingTime: '23:00',
       tourDuration: 45,
+      narrativeStoreId: null,
+      narrativeDocumentId: null,
+      hasNarrative: false,
+      closedDays: const [],
+      scheduleByDay: const {},
+      crowdInfo: null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       distance: 0.5,
     );
-
+    final navVm = Provider.of<NavigationProvider>(context, listen: false);
     AppAnimations.showFluidModalBottomSheet(
       context: context,
       builder: (ctx) => PlacePreviewModal(
         place: mockPlace,
-        onNavigate: () => _handlePlaceSelection(mockPlace),
+        onNavigate: () => _handlePlaceSelectionWithNav(navVm, mockPlace, ctx),
         onChat: () => _handleChat(mockPlace),
         onDetails: () => _handleDetails(mockPlace),
       ),
@@ -207,16 +213,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   // Nuevos métodos para manejar las acciones del modal
-  Future<void> _handlePlaceSelection(Place place) async {
+  Future<void> _handlePlaceSelection(Place place, BuildContext ctx) async {
     _hideTooltip();
     final lat = place.latitude;
     final lon = place.longitude;
     
-    final navVm = Provider.of<NavigationProvider>(context, listen: false);
+    final navVm = Provider.of<NavigationProvider>(ctx, listen: false);
     final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
     _userSpeed = geoPos.speed;
     
-    Navigator.of(context).pop(); // Cerrar el modal
+    Navigator.of(ctx).pop(); // Cerrar el modal
     
     await navVm.calculateRoute(
       latOrigin: geoPos.latitude, 
@@ -227,6 +233,32 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       showOverlay: false,
       destinationName: place.name, // Nombre del destino para la UI
     );
+    if (navVm.routeCoords.isNotEmpty) {
+      await _fitCameraToRoute(navVm.routeCoords);
+      await _drawRoute(navVm.routeCoords);
+    }
+  }
+
+  Future<void> _handlePlaceSelectionWithNav(NavigationProvider navVm, Place place, BuildContext ctx) async {
+    _hideTooltip();
+    final lat = place.latitude;
+    final lon = place.longitude;
+    final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+    _userSpeed = geoPos.speed;
+    Navigator.of(ctx).pop();
+    await navVm.calculateRoute(
+      latOrigin: geoPos.latitude,
+      lonOrigin: geoPos.longitude,
+      latDest: lat,
+      lonDest: lon,
+      currentSpeed: _userSpeed,
+      showOverlay: false,
+      destinationName: place.name,
+    );
+    if (navVm.routeCoords.isNotEmpty) {
+      await _fitCameraToRoute(navVm.routeCoords);
+      await _drawRoute(navVm.routeCoords);
+    }
   }
 
   void _handleChat(Place place) {
@@ -263,6 +295,40 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       lineOpacity: 0.8,
     );
     await _routeManager!.create(opt);
+  }
+  
+  Future<void> _fitCameraToRoute(List<Position> coords) async {
+    if (_mapboxMap == null || coords.length < 2) return;
+    double minLat = coords.first.lat.toDouble();
+    double maxLat = minLat;
+    double minLon = coords.first.lng.toDouble();
+    double maxLon = minLon;
+    for (final p in coords) {
+      final la = p.lat.toDouble();
+      final lo = p.lng.toDouble();
+      if (la < minLat) minLat = la;
+      if (la > maxLat) maxLat = la;
+      if (lo < minLon) minLon = lo;
+      if (lo > maxLon) maxLon = lo;
+    }
+    final centerLat = (minLat + maxLat) / 2.0;
+    final centerLon = (minLon + maxLon) / 2.0;
+    final diagonalMeters = geo.Geolocator.distanceBetween(minLat, minLon, maxLat, maxLon);
+    double zoom;
+    if (diagonalMeters < 500) {
+      zoom = 16;
+    } else if (diagonalMeters < 1500) {
+      zoom = 14.5;
+    } else if (diagonalMeters < 5000) {
+      zoom = 13;
+    } else if (diagonalMeters < 15000) {
+      zoom = 12;
+    } else {
+      zoom = 10.5;
+    }
+    await _mapboxMap!.setCamera(
+      CameraOptions(center: Point(coordinates: Position(centerLon, centerLat)), zoom: zoom),
+    );
   }
 
   @override
@@ -365,13 +431,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     final data = vm.places;
                                     await _placesLayer?.updatePlaces(data);
                                   });
+                                  final navVmLocal = Provider.of<NavigationProvider>(context, listen: false);
                                   _placesLayer?.attachInteractions((place) {
                                     AppAnimations.showFluidModalBottomSheet(
                                       context: context,
-                                      // Usamos el nuevo PlacePreviewModal
                                       builder: (ctx) => PlacePreviewModal(
                                         place: place,
-                                        onNavigate: () => _handlePlaceSelection(place),
+                                        onNavigate: () => _handlePlaceSelectionWithNav(navVmLocal, place, ctx),
                                         onChat: () => _handleChat(place),
                                         onDetails: () => _handleDetails(place),
                                       ),
