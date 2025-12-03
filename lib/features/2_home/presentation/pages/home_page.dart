@@ -7,7 +7,6 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' show ImageFilter, Path, Paint, Canvas;
 import 'package:flutter/services.dart' show rootBundle, HapticFeedback;
-import 'package:dio/dio.dart';
 import 'dart:math' as math;
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/home_provider.dart';
@@ -22,6 +21,7 @@ import 'package:kamino_fr/features/2_home/presentation/provider/navigation_provi
 import 'package:kamino_fr/features/2_home/presentation/map/places_layers.dart';
 import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import '../widgets/generation_modal.dart';
+import '../widgets/place_preview_modal.dart'; 
 import 'package:kamino_fr/features/2_home/presentation/widgets/home_floating_buttons.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/eta_indicator.dart';
 import 'package:kamino_fr/features/2_home/presentation/utils/map_style_helper.dart';
@@ -31,6 +31,7 @@ import 'package:kamino_fr/features/2_home/presentation/widgets/home_sliding_pane
 import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
 import 'package:kamino_fr/core/utils/app_animations.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import '../widgets/place_info_modal.dart'; // Usamos el existente
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -47,7 +48,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   PlacesLayerController? _placesLayer;
   Uint8List? _userMarkerBytes;
   PolylineAnnotationManager? _routeManager;
-  Point? _currentDestination;
   
   double _userSpeed = 0.0;
   
@@ -174,6 +174,82 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  void _simulatePlaceSelection({double? lat, double? lon}) {
+    final mockPlace = Place(
+      id: 'sim-1',
+      name: 'Destino Seleccionado',
+      description: 'Ubicación seleccionada manualmente en el mapa. Un lugar perfecto para explorar.',
+      category: 'Ubicación Personalizada',
+      tags: ['Explorar', 'Aventura'],
+      latitude: lat ?? 19.412, 
+      longitude: lon ?? -99.169,
+      address: 'Coordenadas: ${lat?.toStringAsFixed(4)}, ${lon?.toStringAsFixed(4)}',
+      imageUrl: 'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0c/f2/eb/63/parque-mexico.jpg?w=1200&h=-1&s=1',
+      isHiddenGem: false,
+      openingTime: '06:00',
+      closingTime: '23:00',
+      tourDuration: 45,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      distance: 0.5,
+    );
+
+    AppAnimations.showFluidModalBottomSheet(
+      context: context,
+      builder: (ctx) => PlacePreviewModal(
+        place: mockPlace,
+        onNavigate: () => _handlePlaceSelection(mockPlace),
+        onChat: () => _handleChat(mockPlace),
+        onDetails: () => _handleDetails(mockPlace),
+      ),
+    );
+  }
+
+  // Nuevos métodos para manejar las acciones del modal
+  Future<void> _handlePlaceSelection(Place place) async {
+    _hideTooltip();
+    final lat = place.latitude;
+    final lon = place.longitude;
+    
+    final navVm = Provider.of<NavigationProvider>(context, listen: false);
+    final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+    _userSpeed = geoPos.speed;
+    
+    Navigator.of(context).pop(); // Cerrar el modal
+    
+    await navVm.calculateRoute(
+      latOrigin: geoPos.latitude, 
+      lonOrigin: geoPos.longitude, 
+      latDest: lat, 
+      lonDest: lon, 
+      currentSpeed: _userSpeed,
+      showOverlay: false,
+      destinationName: place.name, // Nombre del destino para la UI
+    );
+  }
+
+  void _handleChat(Place place) {
+    Navigator.of(context).pop();
+    // TODO: Conectar con el módulo de chat
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Chat con ${place.name} próximamente')),
+    );
+  }
+
+  void _handleDetails(Place place) {
+    Navigator.of(context).pop();
+    // Usamos showDialog con PlaceInfoModal como en la confirmación de ruta
+    showDialog(
+      context: context,
+      barrierColor: Colors.transparent,
+      builder: (context) => PlaceInfoModal(
+        destinationName: place.name,
+        imageUrl: place.imageUrl, // Pasamos datos reales
+        description: place.description,
+      ),
+    );
+  }
+
   Future<void> _drawRoute(List<Position> coords) async {
     if (_routeManager == null) return;
     await _routeManager!.deleteAll();
@@ -270,18 +346,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 final p = gestureCtx.point;
                                 final lat = p.coordinates.lat.toDouble();
                                 final lon = p.coordinates.lng.toDouble();
-                                _currentDestination = Point(coordinates: Position(lon, lat));
-                                final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
-                                _userSpeed = geoPos.speed;
                                 
-                                await navVm.calculateRoute(
-                                  latOrigin: geoPos.latitude, 
-                                  lonOrigin: geoPos.longitude, 
-                                  latDest: lat, 
-                                  lonDest: lon, 
-                                  currentSpeed: _userSpeed,
-                                  showOverlay: false,
-                                );
+                                // Simular selección de lugar en las coordenadas tocadas
+                                _simulatePlaceSelection(lat: lat, lon: lon);
                               },
                               onCameraChangeListener: (_) { _onCameraChanged(context); },
                               onStyleLoadedListener: (event) async {
@@ -300,7 +367,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   _placesLayer?.attachInteractions((place) {
                                     AppAnimations.showFluidModalBottomSheet(
                                       context: context,
-                                      builder: (ctx) => _PlaceSheetContent(place: place),
+                                      // Usamos el nuevo PlacePreviewModal
+                                      builder: (ctx) => PlacePreviewModal(
+                                        place: place,
+                                        onNavigate: () => _handlePlaceSelection(place),
+                                        onChat: () => _handleChat(place),
+                                        onDetails: () => _handleDetails(place),
+                                      ),
                                     );
                                   });
                                   await _onCameraChanged(context);
@@ -550,62 +623,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 }
 
-class _PlaceSheetContent extends StatelessWidget {
-  final Place place;
-  const _PlaceSheetContent({Key? key, required this.place}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final imgUrl = place.imageUrl;
-    final hasImage = imgUrl.isNotEmpty;
-    final opening = place.openingTime;
-    final closing = place.closingTime;
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF2C303A),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (hasImage)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(imgUrl, height: 160, width: double.infinity, fit: BoxFit.cover),
-              ),
-            if (hasImage) const SizedBox(height: 12),
-            Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
-            const SizedBox(height: 6),
-            Text(place.category, style: const TextStyle(color: Colors.white70)),
-            const SizedBox(height: 8),
-            if (place.tags.isNotEmpty)
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: place.tags.map((t) => Chip(label: Text(t))).toList(),
-              ),
-            if (place.tags.isNotEmpty) const SizedBox(height: 8),
-            if (place.description.isNotEmpty) Text(place.description, style: const TextStyle(color: Colors.white)),
-            const SizedBox(height: 8),
-            Text(place.address, style: const TextStyle(color: Colors.white70)),
-            const SizedBox(height: 8),
-            if (opening != null || closing != null)
-              Row(
-                children: [
-                  const Icon(Icons.schedule, size: 18, color: Colors.white70),
-                  const SizedBox(width: 6),
-                  Text('${opening ?? '-'} - ${closing ?? '-'}', style: const TextStyle(color: Colors.white70)),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// _PlaceSheetContent removed in favor of PlacePreviewModal
 
 class _TooltipBubble extends StatefulWidget {
   final String message;
