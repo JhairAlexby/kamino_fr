@@ -51,8 +51,20 @@ class ProfileSettingsModal extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryMint,
+                foregroundColor: AppTheme.textBlack,
+                elevation: 8,
+                shadowColor: AppTheme.primaryMint.withOpacity(0.4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
-              child: const Text('Confirmar', style: TextStyle(color: AppTheme.textBlack)),
+              child: const Text(
+                'Confirmar',
+                style: TextStyle(
+                  color: AppTheme.textBlack,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
           ],
         );

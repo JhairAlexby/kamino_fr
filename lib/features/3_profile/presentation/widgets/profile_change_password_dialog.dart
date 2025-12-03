@@ -75,7 +75,21 @@ class _ProfileChangePasswordDialogState extends State<ProfileChangePasswordDialo
               const SnackBar(content: Text('Contraseña actualizada correctamente')),
             );
           },
-          child: const Text('Confirmar'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryMint,
+            foregroundColor: AppTheme.textBlack,
+            elevation: 8,
+            shadowColor: AppTheme.primaryMint.withOpacity(0.4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+          child: const Text(
+            'Confirmar',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
       ],
     );

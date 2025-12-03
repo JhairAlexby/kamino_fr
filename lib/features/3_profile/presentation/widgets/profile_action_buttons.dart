@@ -28,7 +28,21 @@ class ProfileActionButtons extends StatelessWidget {
         const SizedBox(height: 24),
         ElevatedButton(
           onPressed: onSaveChanges,
-          child: const Text('Guardar cambios'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryMint,
+            foregroundColor: AppTheme.textBlack,
+            elevation: 8,
+            shadowColor: AppTheme.primaryMint.withOpacity(0.4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+          child: const Text(
+            'Guardar cambios',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
       ],
     );
