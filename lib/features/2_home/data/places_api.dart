@@ -21,15 +21,7 @@ class PlacesApiImpl implements PlacesApi {
     required double radius,
     int limit = 100,
   }) async {
-    final res = await _dio.post(
-      '/api/v1/places/nearby',
-      data: {
-        'latitude': latitude,
-        'longitude': longitude,
-        'radius': radius,
-        'limit': limit,
-      },
-    );
+    final res = await _dio.get('/api/v1/places');
     final map = res.data as Map<String, dynamic>;
     final list = (map['data'] as List?) ?? const [];
     return list.map((e) => Place.fromJson(e as Map<String, dynamic>)).toList();
