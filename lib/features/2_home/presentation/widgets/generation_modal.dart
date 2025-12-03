@@ -160,17 +160,18 @@ class _GenerationModalState extends State<GenerationModal>
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
                 backgroundColor: AppTheme.primaryMint,
-                foregroundColor: Colors.white,
-                elevation: 0,
+                foregroundColor: AppTheme.textBlack, // Color de texto consistente
+                elevation: 8, // Sombra
+                shadowColor: AppTheme.primaryMint.withOpacity(0.4),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(20), // Radio consistente
                 ),
               ),
               child: const Text(
                 'Buscar destino',
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w800, // Negrita
                 ),
               ),
             ),

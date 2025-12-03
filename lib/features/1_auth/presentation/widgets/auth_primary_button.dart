@@ -20,6 +20,15 @@ class AuthPrimaryButton extends StatelessWidget {
       height: 55,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryMint,
+          foregroundColor: AppTheme.textBlack,
+          elevation: 8,
+          shadowColor: AppTheme.primaryMint.withOpacity(0.4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
         child: isLoading
             ? const SizedBox(
                 width: 24,
@@ -33,7 +42,7 @@ class AuthPrimaryButton extends StatelessWidget {
                 text,
                 style: const TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
       ),

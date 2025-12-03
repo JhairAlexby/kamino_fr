@@ -12,6 +12,15 @@ class NavigationProvider extends ChangeNotifier {
   String _etaText = '';
   String get etaText => _etaText;
   
+  String _distanceText = '';
+  String get distanceText => _distanceText;
+
+  double _totalDistanceMeters = 0;
+  double get totalDistanceMeters => _totalDistanceMeters;
+
+  double _totalDurationSeconds = 0;
+  double get totalDurationSeconds => _totalDurationSeconds;
+  
   // Variable para controlar si se muestra el overlay de "Generando Ruta" (IA)
   bool _isGeneratingRouteOverlay = false;
   bool get isGeneratingRouteOverlay => _isGeneratingRouteOverlay;
@@ -36,8 +45,9 @@ class NavigationProvider extends ChangeNotifier {
     required double currentSpeed,
     String? destinationName,
     bool showOverlay = false,
+    String? overrideMode,
   }) async {
-    _navMode = _detectNavProfile(currentSpeed);
+    _navMode = overrideMode ?? _detectNavProfile(currentSpeed);
     _isLoading = true;
     if (showOverlay) {
       _isGeneratingRouteOverlay = true;
@@ -58,6 +68,16 @@ class NavigationProvider extends ChangeNotifier {
         mode: _navMode,
       );
       _routeCoords = result.coordinates;
+      _totalDistanceMeters = result.distanceMeters;
+      _totalDurationSeconds = result.durationSeconds;
+      
+      // Formatear distancia
+      if (_totalDistanceMeters >= 1000) {
+        _distanceText = '${(_totalDistanceMeters / 1000).toStringAsFixed(1)} km';
+      } else {
+        _distanceText = '${_totalDistanceMeters.round()} m';
+      }
+
       updateEta(result.distanceMeters, currentSpeed);
     } catch (e) {
       debugPrint("Error calculando ruta: $e");
@@ -95,6 +115,7 @@ class NavigationProvider extends ChangeNotifier {
   void clearRoute() {
     _routeCoords = [];
     _etaText = '';
+    _distanceText = '';
     _destinationName = null;
     notifyListeners();
   }

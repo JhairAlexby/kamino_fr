@@ -26,6 +26,7 @@ import 'package:kamino_fr/features/2_home/presentation/widgets/home_floating_but
 import 'package:kamino_fr/features/2_home/presentation/widgets/eta_indicator.dart';
 import 'package:kamino_fr/features/2_home/presentation/utils/map_style_helper.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/route_generation_overlay.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/destination_confirmation_dialog.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/home_sliding_panel.dart';
 import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
 import 'package:kamino_fr/core/utils/app_animations.dart';
@@ -223,20 +224,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             backgroundColor: AppTheme.textBlack,
             body: SafeArea(
               bottom: false,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                switchInCurve: Curves.easeOutBack,
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
-                    child: child,
-                  ),
-                ),
-                child: vm.currentTab == 2
-                    ? const ProfilePage(key: ValueKey('profile'))
-                    : SlidingUpPanel(
-                        key: const ValueKey('home_panel'),
+              child: Stack(
+                children: [
+                  // Capa Principal (Mapa + Panel)
+                  // Usamos Offstage para mantener el mapa vivo en memoria y evitar el crash al destruirlo/recrearlo
+                  Offstage(
+                    offstage: vm.currentTab == 2,
+                    child: SlidingUpPanel(
+                      key: const ValueKey('home_panel'),
                       minHeight: 64,
                       maxHeight: MediaQuery.of(context).size.height * 0.75,
                       margin: const EdgeInsets.only(bottom: 0),
@@ -326,6 +321,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ],
                       ),
                     ),
+                  ),
+                  
+                  // Capa de Perfil (Animada)
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    switchInCurve: Curves.easeOutBack,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
+                        child: child,
+                      ),
+                    ),
+                    child: vm.currentTab == 2
+                        ? const ProfilePage(key: ValueKey('profile'))
+                        : const SizedBox.shrink(),
+                  ),
+                ],
               ),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -364,23 +377,74 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 builder: (context) => const GenerationModal(),
                               );
                               if (confirmed == true) {
-                                try {
-                                  final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
-                                  // Simulación: Destino "sorpresa" generado por la IA (offset arbitrario para demo)
-                                  final destLat = geoPos.latitude + 0.005;
-                                  final destLon = geoPos.longitude + 0.005;
-                                  
-                                  await navVm.calculateRoute(
-                                    latOrigin: geoPos.latitude,
-                                    lonOrigin: geoPos.longitude,
-                                    latDest: destLat,
-                                    lonDest: destLon,
-                                    currentSpeed: geoPos.speed,
-                                    showOverlay: true, // Activa la animación de "Generando Ruta"
-                                    destinationName: "Destino Sorpresa"
-                                  );
-                                } catch (e) {
-                                  debugPrint("Error al iniciar ruta IA: $e");
+                                bool keepSearching = true;
+                                while (keepSearching && mounted) {
+                                  try {
+                                    final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+                                    
+                                    // Simulación: Destino "sorpresa" generado por la IA
+                                    // Generamos un offset aleatorio para simular diferentes destinos
+                                    final random = math.Random();
+                                    final latOffset = (random.nextDouble() * 0.02 - 0.01); // +/- 0.01 grados (~1km)
+                                    final lonOffset = (random.nextDouble() * 0.02 - 0.01);
+                                    
+                                    final destLat = geoPos.latitude + (latOffset.abs() < 0.002 ? 0.005 : latOffset);
+                                    final destLon = geoPos.longitude + (lonOffset.abs() < 0.002 ? 0.005 : lonOffset);
+                                    
+                                    await navVm.calculateRoute(
+                                      latOrigin: geoPos.latitude,
+                                      lonOrigin: geoPos.longitude,
+                                      latDest: destLat,
+                                      lonDest: destLon,
+                                      currentSpeed: geoPos.speed,
+                                      showOverlay: true, // Activa la animación de "Generando Ruta"
+                                      destinationName: "Destino Sorpresa"
+                                    );
+
+                                    if (navVm.routeCoords.isNotEmpty && mounted) {
+                                      final selectedMode = await showDialog<String>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (ctx) => DestinationConfirmationDialog(
+                                          initialMode: navVm.navMode,
+                                          destinationName: navVm.destinationName ?? 'Destino',
+                                          distance: navVm.distanceText,
+                                          duration: navVm.etaText,
+                                        ),
+                                      );
+
+                                      if (selectedMode == 'regenerate') {
+                                        // El usuario quiere otra opción, el bucle continúa
+                                        keepSearching = true;
+                                        navVm.clearRoute();
+                                      } else if (selectedMode != null) {
+                                        // Usuario confirmó
+                                        keepSearching = false;
+                                        // Si cambió el modo, recalculamos (opcional, o solo actualizamos estado)
+                                        if (selectedMode != navVm.navMode) {
+                                          await navVm.calculateRoute(
+                                            latOrigin: geoPos.latitude,
+                                            lonOrigin: geoPos.longitude,
+                                            latDest: destLat,
+                                            lonDest: destLon,
+                                            currentSpeed: geoPos.speed,
+                                            destinationName: "Destino Sorpresa",
+                                            overrideMode: selectedMode,
+                                          );
+                                        }
+                                        // Aquí iniciaría la navegación real
+                                      } else {
+                                        // Usuario canceló (null)
+                                        keepSearching = false;
+                                        navVm.clearRoute();
+                                      }
+                                    } else {
+                                      keepSearching = false;
+                                    }
+                                  } catch (e) {
+                                    debugPrint("Error al iniciar ruta IA: $e");
+                                    keepSearching = false;
+                                  }
                                 }
                               }
                             },
