@@ -5,10 +5,14 @@ import 'package:kamino_fr/features/2_home/presentation/widgets/mint_dialog_shell
 
 class PlaceInfoModal extends StatelessWidget {
   final String destinationName;
+  final String? imageUrl;
+  final String? description;
 
   const PlaceInfoModal({
     super.key,
     required this.destinationName,
+    this.imageUrl,
+    this.description,
   });
 
   @override
@@ -50,8 +54,10 @@ class PlaceInfoModal extends StatelessWidget {
                         offset: const Offset(0, 8),
                       ),
                     ],
-                    image: const DecorationImage(
-                      image: AssetImage('assets/images/3dmapa.png'), // Placeholder
+                    image: DecorationImage(
+                      image: imageUrl != null && imageUrl!.isNotEmpty
+                          ? NetworkImage(imageUrl!) as ImageProvider
+                          : const AssetImage('assets/images/3dmapa.png'),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -59,11 +65,13 @@ class PlaceInfoModal extends StatelessWidget {
                 const SizedBox(height: 24),
                 
                 // Descripción (Texto más pequeño)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Text(
-                    'Este es un lugar increíble para visitar, lleno de historia y belleza natural. Disfruta de las vistas panorámicas y la experiencia única que ofrece este destino. Perfecto para relajarse y conectar con la naturaleza.',
-                    style: TextStyle(
+                    description != null && description!.isNotEmpty
+                        ? description!
+                        : 'Este es un lugar increíble para visitar, lleno de historia y belleza natural. Disfruta de las vistas panorámicas y la experiencia única que ofrece este destino. Perfecto para relajarse y conectar con la naturaleza.',
+                    style: const TextStyle(
                       color: Colors.white70, // Texto un poco más apagado para lectura
                       fontSize: 14, // Texto más pequeño
                       height: 1.6, // Mayor altura de línea para legibilidad
@@ -100,7 +108,7 @@ class PlaceInfoModal extends StatelessWidget {
                         Icon(Icons.chat_bubble_outline, size: 24),
                         SizedBox(width: 12),
                         Text(
-                          'Preguntar al guía IA',
+                          'Chatear con Guía IA',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,

@@ -42,7 +42,7 @@ class MintDialogShell extends StatelessWidget {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryMint,
                   borderRadius: BorderRadius.circular(20),
@@ -72,25 +72,27 @@ class MintDialogShell extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                right: 12,
-                top: 12,
-                child: GestureDetector(
-                  onTap: onClose,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: GestureDetector(
+                    onTap: onClose,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.close, size: 18),
                     ),
-                    child: const Icon(Icons.close, size: 20),
                   ),
                 ),
               ),

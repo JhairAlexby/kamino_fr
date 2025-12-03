@@ -12,7 +12,7 @@ class GenerationModal extends StatefulWidget {
 
 class _GenerationModalState extends State<GenerationModal>
     with SingleTickerProviderStateMixin {
-  int _selectedHours = 4;
+  int _selectedHours = 1;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late TextEditingController _hoursController;
@@ -152,6 +152,12 @@ class _GenerationModalState extends State<GenerationModal>
                 if (_selectedHours > 24) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('El máximo de horas disponibles es 24')),
+                  );
+                  return;
+                }
+                if (_selectedHours < 1) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('El mínimo de horas disponibles es 1')),
                   );
                   return;
                 }

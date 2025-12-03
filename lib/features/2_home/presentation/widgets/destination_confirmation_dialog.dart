@@ -187,7 +187,7 @@ class _DestinationConfirmationDialogState extends State<DestinationConfirmationD
                       'Vamos',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w800, // Más negrita
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -207,7 +207,7 @@ class _DestinationConfirmationDialogState extends State<DestinationConfirmationD
                       ),
                     ),
                     child: const Text(
-                      'Otra opción',
+                      'Otra Opción',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
