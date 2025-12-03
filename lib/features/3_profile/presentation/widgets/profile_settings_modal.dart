@@ -8,7 +8,11 @@ class ProfileSettingsModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF2C303A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,

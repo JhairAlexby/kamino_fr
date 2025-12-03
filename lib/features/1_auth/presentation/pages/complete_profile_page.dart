@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/core/app_theme.dart';
-import 'package:kamino_fr/config/environment_config.dart';
-import 'package:kamino_fr/core/auth/token_storage.dart';
-import 'package:kamino_fr/core/network/http_client.dart';
-import 'package:kamino_fr/features/3_profile/data/profile_api.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_repository.dart';
 import 'package:kamino_fr/features/1_auth/presentation/provider/complete_profile_provider.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/register_gender_dropdown.dart';
@@ -15,11 +11,7 @@ class CompleteProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final config = Provider.of<EnvironmentConfig>(context, listen: false);
-    final storage = SecureTokenStorage();
-    final http = HttpClient(config, storage);
-    final api = ProfileApiImpl(http.dio);
-    final repo = ProfileRepository(api: api);
+    final repo = Provider.of<ProfileRepository>(context, listen: false);
 
     return ChangeNotifierProvider(
       create: (_) => CompleteProfileProvider(repo),

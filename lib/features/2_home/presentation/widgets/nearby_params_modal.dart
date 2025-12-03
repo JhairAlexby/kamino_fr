@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_input.dart';
 import 'package:kamino_fr/features/1_auth/presentation/widgets/auth_primary_button.dart';
@@ -77,14 +78,22 @@ class _NearbyParamsModalState extends State<NearbyParamsModal> {
               hintText: 'Ingresa radio',
               labelText: 'Radio (km)',
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                // Solo números y punto decimal, máximo 5 caracteres
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                LengthLimitingTextInputFormatter(5),
+              ],
             ),
-            const SizedBox(height: 12),
             const SizedBox(height: 12),
             AuthInput(
               controller: _limitCtrl,
               hintText: 'Ingresa límite',
               labelText: 'Límite (lugares)',
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(3),
+              ],
             ),
             const SizedBox(height: 12),
             const SizedBox(height: 12),
@@ -94,6 +103,22 @@ class _NearbyParamsModalState extends State<NearbyParamsModal> {
               onPressed: () {
                 final r = double.tryParse(_radiusCtrl.text) ?? widget.initialRadius;
                 final l = int.tryParse(_limitCtrl.text) ?? widget.initialLimit;
+
+                // Validaciones lógicas antes de guardar
+                if (r > 500) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('El radio máximo es de 500 km')),
+                  );
+                  return;
+                }
+
+                if (l > 50) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('El límite máximo es de 50 lugares')),
+                  );
+                  return;
+                }
+
                 widget.onSave(useManual: _useManual, radius: r, limit: l);
                 Navigator.of(context).pop(true);
               },

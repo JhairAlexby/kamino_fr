@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kamino_fr/core/app_theme.dart';
+
 
 class ProfileDataSection extends StatelessWidget {
   final TextEditingController firstNameController;
@@ -36,6 +38,10 @@ class ProfileDataSection extends StatelessWidget {
           const SizedBox(height: 16),
           TextFormField(
             controller: firstNameController,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+              LengthLimitingTextInputFormatter(50),
+            ],
             style: const TextStyle(color: AppTheme.primaryMintDark),
             cursorColor: AppTheme.primaryMintDark,
             decoration: const InputDecoration(
@@ -48,6 +54,10 @@ class ProfileDataSection extends StatelessWidget {
           const SizedBox(height: 12),
           TextFormField(
             controller: lastNameController,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+              LengthLimitingTextInputFormatter(50),
+            ],
             style: const TextStyle(color: AppTheme.primaryMintDark),
             cursorColor: AppTheme.primaryMintDark,
             decoration: const InputDecoration(
