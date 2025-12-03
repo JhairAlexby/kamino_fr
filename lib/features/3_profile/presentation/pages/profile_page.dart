@@ -5,6 +5,9 @@ import 'package:kamino_fr/features/3_profile/presentation/widgets/profile_intere
 import 'package:kamino_fr/features/3_profile/presentation/widgets/profile_data_section.dart';
 import 'package:kamino_fr/features/3_profile/presentation/widgets/profile_change_password_dialog.dart';
 import 'package:kamino_fr/features/3_profile/presentation/widgets/profile_settings_modal.dart';
+import 'package:kamino_fr/features/3_profile/presentation/widgets/profile_action_buttons.dart';
+import 'package:kamino_fr/features/3_profile/presentation/widgets/profile_logs_tab.dart';
+import 'package:kamino_fr/core/utils/app_animations.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 
@@ -115,65 +118,40 @@ class _ProfilePageState extends State<ProfilePage> {
                               lastNameController: _lastNameCtrl,
                             ),
                             const SizedBox(height: 12),
-                            OutlinedButton(
-                              onPressed: _showChangePasswordDialog,
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                side: const BorderSide(color: AppTheme.primaryMint),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              ),
-                              child: const Text('Cambiar contraseña', style: TextStyle(color: Colors.white)),
-                            ),
-                            const SizedBox(height: 24),
-                            ElevatedButton(
-                              onPressed: () async {
+                            
+                            // REEMPLAZO POR COMPONENTE
+                            ProfileActionButtons(
+                              onChangePassword: _showChangePasswordDialog,
+                              onSaveChanges: () async {
                                 try {
-                                  await profileProvider.repo.updateProfile(
+                                  await profileProvider.updateProfileData(
                                     firstName: _firstNameCtrl.text.trim(),
                                     lastName: _lastNameCtrl.text.trim(),
+                                    tags: _interests.toList(),
                                   );
-                                  await profileProvider.repo.updateTags(_interests.toList());
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Datos actualizados')));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Datos actualizados')));
+                                  }
                                 } catch (_) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo actualizar los datos')));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo actualizar los datos')));
+                                  }
                                 }
                               },
-                              child: const Text('Guardar cambios'),
                             ),
                           ],
                         )
-                      : Column(
-                          key: const ValueKey('bitacoras'),
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.25),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: const Text('Bitácoras recientes (placeholder)'),
-                            ),
-                          ],
-                        ),
+                      : const ProfileLogsTab(key: ValueKey('bitacoras')),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+              ],
+            ),
           ),
         ),
+        const SizedBox(height: 24),
+          ],
+        ),
       ),
-    ],
-  ),
-),
     );
   }
 
@@ -185,19 +163,15 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _showChangePasswordDialog() {
-    showDialog(
+    AppAnimations.showFluidDialog(
       context: context,
       builder: (context) => const ProfileChangePasswordDialog(),
     );
   }
 
   void _showSettings(BuildContext context) {
-    showModalBottomSheet(
+    AppAnimations.showFluidModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF2C303A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) => const ProfileSettingsModal(),
     );
   }

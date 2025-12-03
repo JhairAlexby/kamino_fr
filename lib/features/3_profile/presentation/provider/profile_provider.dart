@@ -80,5 +80,26 @@ class ProfileProvider extends ChangeNotifier {
     final m = two(d.minute);
     return '$day/$mon/$yr $h:$m';
   }
-}
 
+  Future<void> updateProfileData({
+    required String firstName,
+    required String lastName,
+    required List<String> tags,
+  }) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      await repo.updateProfile(firstName: firstName, lastName: lastName);
+      await repo.updateTags(tags);
+      // Recargamos el perfil para asegurar que tenemos la data más fresca
+      await loadProfile();
+    } catch (e) {
+      errorMessage = 'Error al actualizar los datos';
+      isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+}

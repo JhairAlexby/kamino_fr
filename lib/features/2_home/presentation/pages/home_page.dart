@@ -28,6 +28,7 @@ import 'package:kamino_fr/features/2_home/presentation/utils/map_style_helper.da
 import 'package:kamino_fr/features/2_home/presentation/widgets/route_generation_overlay.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/home_sliding_panel.dart';
 import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
+import 'package:kamino_fr/core/utils/app_animations.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class HomePage extends StatefulWidget {
@@ -222,9 +223,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             backgroundColor: AppTheme.textBlack,
             body: SafeArea(
               bottom: false,
-              child: vm.currentTab == 2
-                  ? const ProfilePage()
-                  : SlidingUpPanel(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                switchInCurve: Curves.easeOutBack,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
+                    child: child,
+                  ),
+                ),
+                child: vm.currentTab == 2
+                    ? const ProfilePage(key: ValueKey('profile'))
+                    : SlidingUpPanel(
+                        key: const ValueKey('home_panel'),
                       minHeight: 64,
                       maxHeight: MediaQuery.of(context).size.height * 0.75,
                       margin: const EdgeInsets.only(bottom: 0),
@@ -291,11 +303,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     await _placesLayer?.updatePlaces(data);
                                   });
                                   _placesLayer?.attachInteractions((place) {
-                                    showModalBottomSheet(
+                                    AppAnimations.showFluidModalBottomSheet(
                                       context: context,
-                                      builder: (ctx) {
-                                        return _PlaceSheetContent(place: place);
-                                      },
+                                      builder: (ctx) => _PlaceSheetContent(place: place),
                                     );
                                   });
                                   await _onCameraChanged(context);
@@ -316,11 +326,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ],
                       ),
                     ),
+              ),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-            floatingActionButton: vm.currentTab == 2
-                ? null
-                : Column(
+            floatingActionButton: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              switchInCurve: Curves.easeOutBack,
+              transitionBuilder: (child, animation) => ScaleTransition(
+                scale: animation,
+                child: FadeTransition(opacity: animation, child: child),
+              ),
+              child: vm.currentTab == 2
+                  ? const SizedBox.shrink(key: ValueKey('empty_fab'))
+                  : Column(
+                      key: const ValueKey('home_fab'),
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -340,7 +359,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           GestureDetector(
                             onTap: () async {
                               _hideTooltip();
-                              final confirmed = await showDialog<bool>(context: context, builder: (context) => const GenerationModal());
+                              final confirmed = await AppAnimations.showFluidDialog<bool>(
+                                context: context,
+                                builder: (context) => const GenerationModal(),
+                              );
                               if (confirmed == true) {
                                 try {
                                   final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
@@ -398,6 +420,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       const SizedBox(height: 60),
                     ],
                   ),
+            ),
             bottomNavigationBar: SafeArea(
               top: false,
               child: ClipRRect(
@@ -474,6 +497,10 @@ class _PlaceSheetContent extends StatelessWidget {
     final opening = place.openingTime;
     final closing = place.closingTime;
     return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF2C303A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       padding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
         child: Column(
@@ -486,9 +513,9 @@ class _PlaceSheetContent extends StatelessWidget {
                 child: Image.network(imgUrl, height: 160, width: double.infinity, fit: BoxFit.cover),
               ),
             if (hasImage) const SizedBox(height: 12),
-            Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
             const SizedBox(height: 6),
-            Text(place.category),
+            Text(place.category, style: const TextStyle(color: Colors.white70)),
             const SizedBox(height: 8),
             if (place.tags.isNotEmpty)
               Wrap(
@@ -497,16 +524,16 @@ class _PlaceSheetContent extends StatelessWidget {
                 children: place.tags.map((t) => Chip(label: Text(t))).toList(),
               ),
             if (place.tags.isNotEmpty) const SizedBox(height: 8),
-            if (place.description.isNotEmpty) Text(place.description),
+            if (place.description.isNotEmpty) Text(place.description, style: const TextStyle(color: Colors.white)),
             const SizedBox(height: 8),
-            Text(place.address),
+            Text(place.address, style: const TextStyle(color: Colors.white70)),
             const SizedBox(height: 8),
             if (opening != null || closing != null)
               Row(
                 children: [
-                  const Icon(Icons.schedule, size: 18),
+                  const Icon(Icons.schedule, size: 18, color: Colors.white70),
                   const SizedBox(width: 6),
-                  Text('${opening ?? '-'} - ${closing ?? '-'}'),
+                  Text('${opening ?? '-'} - ${closing ?? '-'}', style: const TextStyle(color: Colors.white70)),
                 ],
               ),
           ],

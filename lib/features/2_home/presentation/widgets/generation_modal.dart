@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/mint_dialog_shell.dart';
 
@@ -110,6 +111,10 @@ class _GenerationModalState extends State<GenerationModal>
                   child: TextField(
                     controller: _hoursController,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                    ],
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 20,
@@ -144,6 +149,12 @@ class _GenerationModalState extends State<GenerationModal>
             // Action Button
             ElevatedButton(
               onPressed: () {
+                if (_selectedHours > 24) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('El máximo de horas disponibles es 24')),
+                  );
+                  return;
+                }
                 Navigator.of(context).pop(true);
               },
               style: ElevatedButton.styleFrom(

@@ -51,6 +51,7 @@ class MyApp extends StatelessWidget {
       providers: [
         Provider<EnvironmentConfig>.value(value: config!),
         Provider<AuthRepository>.value(value: authRepo),
+        Provider<ProfileRepository>.value(value: profileRepo),
         ChangeNotifierProvider.value(value: appState),
         ChangeNotifierProvider(
           create: (_) => ProfileProvider(

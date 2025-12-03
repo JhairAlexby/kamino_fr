@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 
 class AuthInput extends StatelessWidget {
@@ -11,6 +12,7 @@ class AuthInput extends StatelessWidget {
   final String? labelText;
   final IconData? prefixIcon;
   final Iterable<String>? autofillHints;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AuthInput({
     super.key,
@@ -23,6 +25,7 @@ class AuthInput extends StatelessWidget {
     this.labelText,
     this.prefixIcon,
     this.autofillHints,
+    this.inputFormatters,
   });
 
   @override
@@ -33,6 +36,7 @@ class AuthInput extends StatelessWidget {
       obscureText: obscureText,
       validator: validator,
       autofillHints: autofillHints,
+      inputFormatters: inputFormatters,
       // Texto blanco para mayor legibilidad
       style: const TextStyle(fontSize: 16, color: Colors.white),
       cursorColor: AppTheme.primaryMint,
