@@ -33,6 +33,9 @@ import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dar
 import 'package:kamino_fr/core/utils/app_animations.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import '../widgets/place_info_modal.dart'; // Usamos el existente
+import 'package:kamino_fr/features/5_chat/data/chat_api.dart';
+import 'package:kamino_fr/features/5_chat/data/chat_repository.dart';
+import 'package:kamino_fr/features/5_chat/presentation/widgets/chat_bottom_sheet.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -263,9 +266,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void _handleChat(Place place) {
     Navigator.of(context).pop();
-    // TODO: Conectar con el módulo de chat
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Chat con ${place.name} próximamente')),
+    final config = Provider.of<EnvironmentConfig>(context, listen: false);
+    final http = HttpClient(config, SecureTokenStorage());
+    final api = ChatApiImpl(http.dio);
+    final repo = ChatRepository(api: api);
+    AppAnimations.showFluidModalBottomSheet(
+      context: context,
+      builder: (_) => ChatBottomSheet(repository: repo, title: 'Chat: ${place.name}'),
     );
   }
 
