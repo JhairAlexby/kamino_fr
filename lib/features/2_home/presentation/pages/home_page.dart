@@ -16,6 +16,7 @@ import 'package:kamino_fr/core/network/http_client.dart';
 import 'package:kamino_fr/features/2_home/data/places_api.dart';
 import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/features/2_home/data/navigation_repository.dart';
+import 'package:kamino_fr/features/4_routes/presentation/pages/my_routes_page.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/navigation_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/map/places_layers.dart';
@@ -305,7 +306,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   // Capa Principal (Mapa + Panel)
                   // Usamos Offstage para mantener el mapa vivo en memoria y evitar el crash al destruirlo/recrearlo
                   Offstage(
-                    offstage: vm.currentTab == 2,
+                    offstage: vm.currentTab != 0,
                     child: SlidingUpPanel(
                       key: const ValueKey('home_panel'),
                       minHeight: 64,
@@ -409,7 +410,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                     child: vm.currentTab == 2
                         ? const ProfilePage(key: ValueKey('profile'))
-                        : const SizedBox.shrink(),
+                        : vm.currentTab == 1
+                            ? const MyRoutesPage(key: ValueKey('my_routes'))
+                            : const SizedBox.shrink(),
                   ),
                 ],
               ),
@@ -422,7 +425,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 scale: animation,
                 child: FadeTransition(opacity: animation, child: child),
               ),
-              child: vm.currentTab == 2
+              child: vm.currentTab != 0
                   ? const SizedBox.shrink(key: ValueKey('empty_fab'))
                   : Column(
                       key: const ValueKey('home_fab'),
@@ -607,7 +610,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         },
                         destinations: const [
                           NavigationDestination(icon: Icon(Icons.home), selectedIcon: Icon(Icons.home), label: 'Inicio'),
-                          NavigationDestination(icon: Icon(Icons.menu_book_outlined), selectedIcon: Icon(Icons.menu_book), label: 'Bitácoras'),
+                          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Mis Rutas'),
                           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Perfil'),
                         ],
                       ),
