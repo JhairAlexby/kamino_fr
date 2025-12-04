@@ -42,8 +42,17 @@ class PlacesApiImpl implements PlacesApi {
         'limit': limit,
       },
     );
-    final list = (res.data as List?) ?? const [];
-    return list.map((e) => Place.fromJson(e as Map<String, dynamic>)).toList();
+    final raw = res.data;
+    if (raw is List) {
+      return raw.map((e) => Place.fromJson(e as Map<String, dynamic>)).toList();
+    }
+    if (raw is Map<String, dynamic>) {
+      final data = raw['data'];
+      if (data is List) {
+        return data.map((e) => Place.fromJson(e as Map<String, dynamic>)).toList();
+      }
+    }
+    return const [];
   }
 
   @override
