@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:kamino_fr/core/utils/geo_utils.dart';
 
 class RouteResult {
   final List<Position> coordinates;
@@ -26,8 +27,8 @@ class NavigationRepository {
     required double lonDest,
     required String mode,
   }) async {
-    // Construimos la URL de la API de Directions de Mapbox
-    final url = 'https://api.mapbox.com/directions/v5/mapbox/$mode/$lonOrigin,$latOrigin;$lonDest,$latDest?geometries=geojson&access_token=$_accessToken';
+    final profile = mode == 'driving' ? 'driving-traffic' : mode;
+    final url = 'https://api.mapbox.com/directions/v5/mapbox/$profile/$lonOrigin,$latOrigin;$lonDest,$latDest?geometries=geojson&access_token=$_accessToken';
     
     try {
       final resp = await _dio.get(url);
@@ -53,26 +54,28 @@ class NavigationRepository {
         durationSeconds: duration,
       );
     } catch (e) {
-      // Fallback con datos mockeados si falla la API (para desarrollo sin backend)
-      if (e.toString().contains('No se encontró una ruta') || true) { // 'true' forzado para demo si falla red
-         // Generamos una línea recta simple entre origen y destino con algunos puntos intermedios
-         final points = <Position>[
-           Position(lonOrigin, latOrigin),
-           Position((lonOrigin + lonDest) / 2, (latOrigin + latDest) / 2),
-           Position(lonDest, latDest),
-         ];
-         
-         // Distancia aprox en metros (haversine simplificado o dummy)
-         const distance = 2500.0; // 2.5 km
-         const duration = 600.0; // 10 min
-         
-         return RouteResult(
-           coordinates: points,
-           distanceMeters: distance,
-           durationSeconds: duration,
-         );
-      }
-      // rethrow; // Comentamos rethrow para usar el mock
+      final points = <Position>[
+        Position(lonOrigin, latOrigin),
+        Position((lonOrigin + lonDest) / 2, (latOrigin + latDest) / 2),
+        Position(lonDest, latDest),
+      ];
+      final distance = GeoUtils.haversineMeters(latOrigin, lonOrigin, latDest, lonDest);
+      final avg = _avgSpeedMetersPerSecond(mode);
+      final duration = avg > 0 ? distance / avg : 0.0;
+      return RouteResult(
+        coordinates: points,
+        distanceMeters: distance,
+        durationSeconds: duration,
+      );
+    }
+  }
+
+  double _avgSpeedMetersPerSecond(String mode) {
+    switch (mode) {
+      case 'walking': return 1.4;
+      case 'cycling': return 4.16;
+      case 'driving':
+      default: return 13.9;
     }
   }
 }

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../data/navigation_repository.dart';
+import 'package:kamino_fr/core/utils/geo_utils.dart';
 
 class NavigationProvider extends ChangeNotifier {
   final NavigationRepository _repository;
@@ -78,10 +79,19 @@ class NavigationProvider extends ChangeNotifier {
         _distanceText = '${_totalDistanceMeters.round()} m';
       }
 
-      updateEta(result.distanceMeters, currentSpeed);
+      if (_totalDurationSeconds > 0) {
+        final d = Duration(seconds: _totalDurationSeconds.round());
+        final h = d.inHours;
+        final m = d.inMinutes.remainder(60);
+        final s = d.inSeconds.remainder(60);
+        _etaText = h > 0 ? '${h}h ${m}m' : (m > 0 ? '${m}m ${s}s' : '${s}s');
+      } else {
+        updateEta(result.distanceMeters, currentSpeed);
+      }
     } catch (e) {
       debugPrint("Error calculando ruta: $e");
       _etaText = 'Error';
+      _distanceText = 'N/A';
     } finally {
       _isLoading = false;
       _isGeneratingRouteOverlay = false;
@@ -145,12 +155,12 @@ class NavigationProvider extends ChangeNotifier {
     int nearestIdx = 0;
     double minD = double.infinity;
     for (int i = 0; i < _routeCoords.length; i++) {
-      final d = _haversine(lat, lon, _routeCoords[i].lat.toDouble(), _routeCoords[i].lng.toDouble());
+      final d = GeoUtils.haversineMeters(lat, lon, _routeCoords[i].lat.toDouble(), _routeCoords[i].lng.toDouble());
       if (d < minD) { minD = d; nearestIdx = i; }
     }
     double sum = 0.0;
     for (int i = nearestIdx; i < _routeCoords.length - 1; i++) {
-      sum += _haversine(
+      sum += GeoUtils.haversineMeters(
         _routeCoords[i].lat.toDouble(), _routeCoords[i].lng.toDouble(),
         _routeCoords[i + 1].lat.toDouble(), _routeCoords[i + 1].lng.toDouble(),
       );
@@ -158,14 +168,4 @@ class NavigationProvider extends ChangeNotifier {
     return sum;
   }
 
-  double _haversine(double lat1, double lon1, double lat2, double lon2) {
-    const double R = 6371000.0;
-    final dLat = _deg2rad(lat2 - lat1);
-    final dLon = _deg2rad(lon2 - lon1);
-    final a = (math.sin(dLat / 2) * math.sin(dLat / 2)) + math.cos(_deg2rad(lat1)) * math.cos(_deg2rad(lat2)) * (math.sin(dLon / 2) * math.sin(dLon / 2));
-    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return R * c;
-  }
-
-  double _deg2rad(double d) => d * 0.017453292519943295;
 }
