@@ -17,6 +17,9 @@ import 'package:kamino_fr/features/2_home/data/places_api.dart';
 import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/features/2_home/data/navigation_repository.dart';
 import 'package:kamino_fr/features/4_routes/presentation/pages/my_routes_page.dart';
+import 'package:kamino_fr/features/4_routes/data/routes_api.dart';
+import 'package:kamino_fr/features/4_routes/data/routes_repository.dart';
+import 'package:kamino_fr/features/4_routes/presentation/widgets/generated_routes_modal.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_provider.dart';
 import 'package:kamino_fr/features/5_explore/presentation/provider/explore_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/navigation_provider.dart';
@@ -526,78 +529,35 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           GestureDetector(
                             onTap: () async {
                               _hideTooltip();
-                              final confirmed = await AppAnimations.showFluidDialog<bool>(
+                              final selectedHours = await AppAnimations.showFluidDialog<int>(
                                 context: context,
                                 builder: (context) => const GenerationModal(),
                               );
-                              if (confirmed == true) {
-                                bool keepSearching = true;
-                                while (keepSearching && mounted) {
-                                  try {
-                                    final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
-                                    
-                                    // Simulación: Destino "sorpresa" generado por la IA
-                                    // Generamos un offset aleatorio para simular diferentes destinos
-                                    final random = math.Random();
-                                    final latOffset = (random.nextDouble() * 0.02 - 0.01); // +/- 0.01 grados (~1km)
-                                    final lonOffset = (random.nextDouble() * 0.02 - 0.01);
-                                    
-                                    final destLat = geoPos.latitude + (latOffset.abs() < 0.002 ? 0.005 : latOffset);
-                                    final destLon = geoPos.longitude + (lonOffset.abs() < 0.002 ? 0.005 : lonOffset);
-                                    
-                                    await navVm.calculateRoute(
-                                      latOrigin: geoPos.latitude,
-                                      lonOrigin: geoPos.longitude,
-                                      latDest: destLat,
-                                      lonDest: destLon,
-                                      currentSpeed: geoPos.speed,
-                                      showOverlay: true, // Activa la animación de "Generando Ruta"
-                                      destinationName: "Destino Sorpresa"
+                              if (selectedHours != null) {
+                                try {
+                                  final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+                                  final minutes = selectedHours * 60;
+                                  final config = Provider.of<EnvironmentConfig>(context, listen: false);
+                                  final http = HttpClient(config, SecureTokenStorage());
+                                  final routesApi = RoutesApiImpl(http.dio);
+                                  final routesRepo = RoutesRepository(api: routesApi);
+                                  final result = await routesRepo.generate(
+                                    availableTimeMinutes: minutes,
+                                    startLatitude: geoPos.latitude,
+                                    startLongitude: geoPos.longitude,
+                                    startDatetime: DateTime.now(),
+                                    maxPlaces: 5,
+                                    nRoutes: 3,
+                                  );
+                                  await AppAnimations.showFluidDialog<void>(
+                                    context: context,
+                                    builder: (_) => GeneratedRoutesModal(response: result),
+                                  );
+                                } catch (_) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Error al generar rutas')),
                                     );
-
-                                    if (navVm.routeCoords.isNotEmpty && mounted) {
-                                      final selectedMode = await showDialog<String>(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        builder: (ctx) => DestinationConfirmationDialog(
-                                          initialMode: navVm.navMode,
-                                          destinationName: navVm.destinationName ?? 'Destino',
-                                          distance: navVm.distanceText,
-                                          duration: navVm.etaText,
-                                        ),
-                                      );
-
-                                      if (selectedMode == 'regenerate') {
-                                        // El usuario quiere otra opción, el bucle continúa
-                                        keepSearching = true;
-                                        navVm.clearRoute();
-                                      } else if (selectedMode != null) {
-                                        // Usuario confirmó
-                                        keepSearching = false;
-                                        // Si cambió el modo, recalculamos (opcional, o solo actualizamos estado)
-                                        if (selectedMode != navVm.navMode) {
-                                          await navVm.calculateRoute(
-                                            latOrigin: geoPos.latitude,
-                                            lonOrigin: geoPos.longitude,
-                                            latDest: destLat,
-                                            lonDest: destLon,
-                                            currentSpeed: geoPos.speed,
-                                            destinationName: "Destino Sorpresa",
-                                            overrideMode: selectedMode,
-                                          );
-                                        }
-                                        // Aquí iniciaría la navegación real
-                                      } else {
-                                        // Usuario canceló (null)
-                                        keepSearching = false;
-                                        navVm.clearRoute();
-                                      }
-                                    } else {
-                                      keepSearching = false;
-                                    }
-                                  } catch (e) {
-                                    debugPrint("Error al iniciar ruta IA: $e");
-                                    keepSearching = false;
                                   }
                                 }
                               }
