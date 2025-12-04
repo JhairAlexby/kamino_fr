@@ -31,6 +31,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         profileProvider.loadProfile();
       }
       profileProvider.addListener(_onProfileChanged);
+      _loadFavorites();
     });
   }
 
