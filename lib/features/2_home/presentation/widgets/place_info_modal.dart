@@ -7,12 +7,14 @@ class PlaceInfoModal extends StatelessWidget {
   final String destinationName;
   final String? imageUrl;
   final String? description;
+  final VoidCallback? onVisitAgain;
 
   const PlaceInfoModal({
     super.key,
     required this.destinationName,
     this.imageUrl,
     this.description,
+    this.onVisitAgain,
   });
 
   @override
@@ -81,16 +83,16 @@ class PlaceInfoModal extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 
-                // Botón para Chat Bot
+                // Botón para visitar de nuevo
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Acción para abrir el chat bot
-                      Navigator.of(context).pop(); // O navegar al chat
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Abriendo chat con guía IA...')),
-                      );
+                      if (onVisitAgain != null) {
+                        onVisitAgain!();
+                      } else {
+                        Navigator.of(context).pop();
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryMint,
@@ -105,10 +107,10 @@ class PlaceInfoModal extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
-                        Icon(Icons.chat_bubble_outline, size: 24),
+                        Icon(Icons.directions, size: 24),
                         SizedBox(width: 12),
                         Text(
-                          'Chatear con Guía IA',
+                          'Visitar de nuevo',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,

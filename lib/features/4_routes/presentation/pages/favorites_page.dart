@@ -9,6 +9,10 @@ import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/core/network/http_client.dart';
 import 'package:kamino_fr/features/2_home/data/places_api.dart';
 import 'package:kamino_fr/features/2_home/data/places_repository.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/place_info_modal.dart';
+import 'package:kamino_fr/features/2_home/presentation/provider/navigation_provider.dart';
+import 'package:kamino_fr/features/2_home/presentation/provider/home_provider.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -150,79 +154,153 @@ class _FavoritesPageState extends State<FavoritesPage> {
   }
 }
 
-class _FavoriteCard extends StatelessWidget {
+class _FavoriteCard extends StatefulWidget {
   final Place place;
   const _FavoriteCard({required this.place});
 
   @override
+  State<_FavoriteCard> createState() => _FavoriteCardState();
+}
+
+class _FavoriteCardState extends State<_FavoriteCard> {
+  bool _loading = false;
+
+  Future<void> _fetchAndShowDetails() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+    });
+    try {
+      final config = Provider.of<EnvironmentConfig>(context, listen: false);
+      final http = HttpClient(config, SecureTokenStorage());
+      final api = PlacesApiImpl(http.dio);
+      final repo = PlacesRepository(api: api, maxRetries: config.maxRetries);
+      final full = await repo.getById(widget.place.id) ?? widget.place;
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (_) => PlaceInfoModal(
+          destinationName: full.name,
+          imageUrl: full.imageUrl.isEmpty ? null : full.imageUrl,
+          description: full.description.isEmpty ? null : full.description,
+          onVisitAgain: () async {
+            try {
+              final pos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+              final navVm = Provider.of<NavigationProvider>(context, listen: false);
+              final homeVm = Provider.of<HomeProvider>(context, listen: false);
+              await navVm.calculateRoute(
+                latOrigin: pos.latitude,
+                lonOrigin: pos.longitude,
+                latDest: full.latitude,
+                lonDest: full.longitude,
+                currentSpeed: pos.speed,
+                destinationName: full.name,
+                showOverlay: true,
+              );
+              Navigator.of(context).pop();
+              homeVm.setTab(0);
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No se pudo iniciar la ruta')),
+              );
+            }
+          },
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo cargar la información del lugar')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        gradient: const RadialGradient(
-          center: Alignment.center,
-          radius: 1.2,
-          colors: [Color(0xFF0F172A), AppTheme.textBlack],
-          stops: [0.0, 1.0],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+    return InkWell(
+      onTap: _fetchAndShowDetails,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: const RadialGradient(
+            center: Alignment.center,
+            radius: 1.2,
+            colors: [Color(0xFF0F172A), AppTheme.textBlack],
+            stops: [0.0, 1.0],
           ),
-        ],
-        border: Border.all(
-          color: Colors.white.withOpacity(0.05),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 72,
-            height: 72,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _ThumbImage(url: place.imageUrl),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
             ),
+          ],
+          border: Border.all(
+            color: Colors.white.withOpacity(0.05),
+            width: 1,
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  place.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  place.category.isNotEmpty ? place.category : 'Lugar',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white.withOpacity(0.6),
-                  ),
-                ),
-              ],
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 72,
+              height: 72,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: _ThumbImage(url: widget.place.imageUrl),
+              ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.favorite, color: AppTheme.primaryMint),
-            onPressed: () {
-              final provider = context.read<ProfileProvider>();
-              provider.toggleFavorite(place.id);
-            },
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    widget.place.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    widget.place.category.isNotEmpty ? widget.place.category : 'Lugar',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.favorite, color: AppTheme.primaryMint),
+              onPressed: () {
+                final provider = context.read<ProfileProvider>();
+                provider.toggleFavorite(widget.place.id);
+              },
+            ),
+            if (_loading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+          ],
+        ),
       ),
     );
   }
