@@ -473,7 +473,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             child: HomeFloatingButtons(
                               onHideTooltip: _hideTooltip,
                               onCenterCamera: () => _centerCameraOnUser(),
-                              onCameraChanged: (ctx) => _onCameraChanged(ctx),
                             ),
                           ),
                           RouteGenerationOverlay(isVisible: navVm.isGeneratingRouteOverlay),
