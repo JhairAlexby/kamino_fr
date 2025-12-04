@@ -186,21 +186,33 @@ class _FavoriteCardState extends State<_FavoriteCard> {
           description: full.description.isEmpty ? null : full.description,
           onVisitAgain: () async {
             try {
-              final pos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
               final navVm = Provider.of<NavigationProvider>(context, listen: false);
               final homeVm = Provider.of<HomeProvider>(context, listen: false);
-              await navVm.calculateRoute(
-                latOrigin: pos.latitude,
-                lonOrigin: pos.longitude,
-                latDest: full.latitude,
-                lonDest: full.longitude,
-                currentSpeed: pos.speed,
-                destinationName: full.name,
-                showOverlay: true,
-              );
               Navigator.of(context).pop();
               homeVm.setTab(0);
-            } catch (e) {
+              Future.microtask(() async {
+                try {
+                  final last = await geo.Geolocator.getLastKnownPosition();
+                  final pos = last ?? await geo.Geolocator.getCurrentPosition(
+                    desiredAccuracy: geo.LocationAccuracy.medium,
+                    timeLimit: const Duration(seconds: 4),
+                  );
+                  await navVm.calculateRoute(
+                    latOrigin: pos.latitude,
+                    lonOrigin: pos.longitude,
+                    latDest: full.latitude,
+                    lonDest: full.longitude,
+                    currentSpeed: pos.speed,
+                    destinationName: full.name,
+                    showOverlay: true,
+                  );
+                } catch (_) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No se pudo iniciar la ruta')),
+                  );
+                }
+              });
+            } catch (_) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('No se pudo iniciar la ruta')),
               );
