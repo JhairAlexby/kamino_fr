@@ -38,6 +38,9 @@ import '../widgets/place_info_modal.dart'; // Usamos el existente
 import 'package:kamino_fr/features/5_chat/data/chat_api.dart';
 import 'package:kamino_fr/features/5_chat/data/chat_repository.dart';
 import 'package:kamino_fr/features/5_chat/presentation/widgets/chat_bottom_sheet.dart';
+import 'package:kamino_fr/features/2_home/data/narrator_api.dart';
+import 'package:kamino_fr/features/2_home/data/narrator_repository.dart';
+import 'package:kamino_fr/core/services/narrator_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -224,7 +227,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final lon = place.longitude;
     final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
     _userSpeed = geoPos.speed;
-    Navigator.of(ctx).pop();
+    if (Navigator.of(ctx).canPop()) {
+      Navigator.of(ctx).pop();
+    }
     await navVm.calculateRoute(
       latOrigin: geoPos.latitude,
       lonOrigin: geoPos.longitude,
@@ -237,6 +242,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     if (navVm.routeCoords.isNotEmpty) {
       await _fitCameraToRoute(navVm.routeCoords);
       await _drawRoute(navVm.routeCoords);
+      try {
+        final config = Provider.of<EnvironmentConfig>(context, listen: false);
+        final http = HttpClient(config, SecureTokenStorage());
+        final api = NarratorApiImpl(http.dio);
+        final repo = NarratorRepository(api: api);
+        final narrator = NarratorService(repository: repo);
+        final ok = await narrator.narratePlace(place.id);
+        if (!ok && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Narración no disponible para este lugar')),
+          );
+        }
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error al iniciar la narración')),
+          );
+        }
+      }
     }
   }
 
