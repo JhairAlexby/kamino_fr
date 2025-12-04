@@ -168,4 +168,13 @@ class NavigationProvider extends ChangeNotifier {
     return sum;
   }
 
+  bool hasArrived(double lat, double lon, {double thresholdMeters = 25}) {
+    final remaining = remainingDistanceMeters(lat, lon);
+    return remaining <= thresholdMeters;
+  }
+
+  void endRoute() {
+    clearRoute();
+  }
+
 }

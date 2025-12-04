@@ -162,8 +162,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       if (navProvider.routeCoords.isNotEmpty) {
         final remaining = navProvider.remainingDistanceMeters(geoPos.latitude, geoPos.longitude);
         navProvider.updateEta(remaining, _userSpeed);
+        if (navProvider.hasArrived(geoPos.latitude, geoPos.longitude)) {
+          _finalizeRoute(navProvider, auto: true);
+        }
       }
     });
+  }
+
+  Future<void> _finalizeRoute(NavigationProvider navVm, {bool auto = false}) async {
+    try {
+      await _routeManager?.deleteAll();
+    } catch (_) {}
+    navVm.endRoute();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(auto ? 'Has llegado. Ruta finalizada' : 'Ruta finalizada')),
+      );
+    }
   }
 
   Future<void> _onCameraChanged(BuildContext ctx) async {
@@ -527,11 +542,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       key: const ValueKey('home_fab'),
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      EtaIndicator(
-                        etaText: navVm.etaText,
-                        navMode: navVm.navMode,
-                      ),
+                      children: [
+                        EtaIndicator(
+                          etaText: navVm.etaText,
+                          navMode: navVm.navMode,
+                        ),
+                        if (navVm.routeCoords.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryMint,
+                                foregroundColor: AppTheme.textBlack,
+                              ),
+                              onPressed: () => _finalizeRoute(navVm, auto: false),
+                              icon: const Icon(Icons.flag),
+                              label: const Text('Finalizar ruta'),
+                            ),
+                          ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
