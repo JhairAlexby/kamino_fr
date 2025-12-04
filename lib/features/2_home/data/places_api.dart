@@ -20,6 +20,8 @@ abstract class PlacesApi {
     String? sortBy,
     String? sortOrder,
   });
+
+  Future<Place?> getById(String id);
 }
 
 class PlacesApiImpl implements PlacesApi {
@@ -82,5 +84,18 @@ class PlacesApiImpl implements PlacesApi {
     final map = res.data as Map<String, dynamic>;
     final list = (map['data'] as List?) ?? const [];
     return list.map((e) => Place.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  @override
+  Future<Place?> getById(String id) async {
+    final res = await _dio.get('/api/v1/places/$id');
+    final raw = res.data;
+    if (raw is Map<String, dynamic>) {
+      final data = raw['data'];
+      if (data is Map<String, dynamic>) {
+        return Place.fromJson(data);
+      }
+    }
+    return null;
   }
 }
