@@ -12,6 +12,21 @@ class _FakePlacesApi implements PlacesApi {
   Future<List<Place>> nearby({required double latitude, required double longitude, required double radius, int limit = 100}) async {
     return const [];
   }
+
+  @override
+  Future<List<Place>> findAll({
+    String? search,
+    String? category,
+    List<String>? tags,
+    double? latitude,
+    double? longitude,
+    double? radius,
+    bool? isHiddenGem,
+    String? sortBy,
+    String? sortOrder,
+  }) async {
+    return const [];
+  }
 }
 
 void main() {

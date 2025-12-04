@@ -102,4 +102,46 @@ class ProfileProvider extends ChangeNotifier {
       rethrow;
     }
   }
+
+  bool isLiked(String placeId) {
+    return user?.favoritePlaces.contains(placeId) ?? false;
+  }
+
+  Future<void> toggleFavorite(String placeId) async {
+    if (user == null) return;
+
+    final isCurrentlyLiked = isLiked(placeId);
+    final currentFavorites = List<String>.from(user!.favoritePlaces);
+
+    // Optimistic update
+    if (isCurrentlyLiked) {
+      currentFavorites.remove(placeId);
+    } else {
+      currentFavorites.add(placeId);
+    }
+
+    user = user!.copyWith(favoritePlaces: currentFavorites);
+    notifyListeners();
+
+    try {
+      if (isCurrentlyLiked) {
+        await repo.removeFavorite(placeId);
+      } else {
+        await repo.addFavorite(placeId);
+      }
+    } catch (e) {
+      // Revert on error
+      final revertedFavorites = List<String>.from(user!.favoritePlaces);
+      if (isCurrentlyLiked) {
+        revertedFavorites.add(placeId);
+      } else {
+        revertedFavorites.remove(placeId);
+      }
+      user = user!.copyWith(favoritePlaces: revertedFavorites);
+      notifyListeners();
+      // Don't rethrow to avoid UI crash, just show error message if needed
+      errorMessage = 'Error al actualizar favoritos';
+      notifyListeners();
+    }
+  }
 }
