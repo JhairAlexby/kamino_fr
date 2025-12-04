@@ -24,5 +24,13 @@ class ProfileRepository {
   Future<void> removeFavorite(String placeId) async {
     await api.removeFavorite(placeId);
   }
+
+  Future<void> addVisited(String placeId) async {
+    await api.addVisited(placeId);
+  }
+
+  Future<void> removeVisited(String placeId) async {
+    await api.removeVisited(placeId);
+  }
 }
 

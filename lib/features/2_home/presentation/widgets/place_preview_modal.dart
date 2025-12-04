@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import 'package:kamino_fr/features/2_home/data/models/place.dart';
 
@@ -57,6 +59,10 @@ class _PlacePreviewModalState extends State<PlacePreviewModal> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
+    final profileProvider = context.watch<ProfileProvider>();
+    final isLiked = profileProvider.isLiked(widget.place.id);
+    final isVisited = profileProvider.isVisited(widget.place.id);
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -129,6 +135,56 @@ class _PlacePreviewModalState extends State<PlacePreviewModal> with SingleTicker
                             ),
                           );
                         },
+                      ),
+                    ),
+                  ),
+                  // Icono de Favorito (Corazón)
+                  Positioned(
+                    top: 4,
+                    left: 4,
+                    child: GestureDetector(
+                      onTap: () {
+                        context.read<ProfileProvider>().toggleFavorite(widget.place.id);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Colors.black26, blurRadius: 4),
+                          ],
+                        ),
+                        child: Icon(
+                          isLiked ? Icons.favorite : Icons.favorite_border,
+                          size: 18,
+                          color: isLiked ? Colors.red : Colors.black54,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Icono de Visitado (Check)
+                  Positioned(
+                    bottom: 4,
+                    right: 4,
+                    child: GestureDetector(
+                      onTap: () {
+                        context.read<ProfileProvider>().toggleVisited(widget.place.id);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Colors.black26, blurRadius: 4),
+                          ],
+                        ),
+                        child: Icon(
+                          isVisited ? Icons.check_circle : Icons.check_circle_outline,
+                          size: 18,
+                          color: isVisited ? AppTheme.primaryMint : Colors.black54,
+                        ),
                       ),
                     ),
                   ),

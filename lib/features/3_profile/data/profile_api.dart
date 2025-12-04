@@ -7,6 +7,8 @@ abstract class ProfileApi {
   Future<void> updateTags(List<String> tags);
   Future<void> addFavorite(String placeId);
   Future<void> removeFavorite(String placeId);
+  Future<void> addVisited(String placeId);
+  Future<void> removeVisited(String placeId);
 }
 
 class ProfileApiImpl implements ProfileApi {
@@ -46,6 +48,16 @@ class ProfileApiImpl implements ProfileApi {
   @override
   Future<void> removeFavorite(String placeId) async {
     await _dio.delete('/api/favorites/$placeId');
+  }
+
+  @override
+  Future<void> addVisited(String placeId) async {
+    await _dio.post('/api/favorites/visited', data: {'placeId': placeId});
+  }
+
+  @override
+  Future<void> removeVisited(String placeId) async {
+    await _dio.delete('/api/favorites/visited/$placeId');
   }
 }
 
