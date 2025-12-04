@@ -62,6 +62,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   PlacesLayerController? _placesLayer;
   Uint8List? _userMarkerBytes;
   PolylineAnnotationManager? _routeManager;
+  final PanelController _panelController = PanelController();
   
   double _userSpeed = 0.0;
   
@@ -392,6 +393,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     offstage: vm.currentTab != 0,
                     child: SlidingUpPanel(
                       key: const ValueKey('home_panel'),
+                      controller: _panelController,
                       minHeight: 64,
                       maxHeight: MediaQuery.of(context).size.height * 0.75,
                       margin: const EdgeInsets.only(bottom: 0),
@@ -402,7 +404,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       backdropOpacity: 0.2,
                       onPanelSlide: (_) => _hideTooltip(),
                       collapsed: const HomeCollapsedPanel(),
-                      panelBuilder: (sc) => HomeExpandedPanel(scrollController: sc),
+                      panelBuilder: (sc) => HomeExpandedPanel(scrollController: sc, panelController: _panelController),
                       body: Stack(
                         alignment: Alignment.center,
                         children: [

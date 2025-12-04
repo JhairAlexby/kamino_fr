@@ -9,3 +9,6 @@
 - Provider `HomeProvider` ahora carga recomendaciones al iniciar y expone estados de carga y error.
 - UI del panel de inicio muestra joyas ocultas, basadas en rutas y destacados con datos reales.
  - Rediseño del panel de recomendaciones: tarjetas horizontales con `ListView.separated`, truncado con elipsis y componentes reutilizables (`RecommendationCard`) para evitar overflows.
+- Se alinearon las secciones con el API: se muestran solo "Gemas ocultas destacadas" (is_hidden_gem) y "Recomendadas para ti" (resto), eliminando bloques no presentes en la respuesta.
+- Simplificación final: una única sección "Recomendaciones para ti" con lista vertical usando `RecommendationListItem`, ordenada por `final_score`.
+ - Se añadió botón "Ir" por cada recomendación para generar ruta al destino: se obtiene el `Place` por `place_id`, se calcula ruta con `NavigationProvider` y se activa la pestaña de mapa.
