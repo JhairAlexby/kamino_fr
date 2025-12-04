@@ -2,74 +2,75 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import '../../data/models/place.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import 'dart:typed_data';
+ 
 
 class PlacesLayerController {
   final MapboxMap map;
   CircleAnnotationManager? _circleManager;
   PointAnnotationManager? _pointManager;
   final Map<String, Place> _annToPlace = {};
-  Uint8List? _markerBytes;
 
   PlacesLayerController({required this.map});
 
   Future<void> ensureInitialized() async {
-    if (_pointManager == null && _circleManager == null) {
+    if (_pointManager == null) {
       try {
-        _markerBytes = await _loadMarkerBytes('assets/images/marker.png');
         _pointManager = await map.annotations.createPointAnnotationManager();
-      } catch (_) {
-        _circleManager = await map.annotations.createCircleAnnotationManager();
-      }
+      } catch (_) {}
     }
-  }
-
-  Future<Uint8List> _loadMarkerBytes(String assetPath) async {
-    final bd = await rootBundle.load(assetPath);
-    return bd.buffer.asUint8List();
+    if (_circleManager == null) {
+      try {
+        _circleManager = await map.annotations.createCircleAnnotationManager();
+      } catch (_) {}
+    }
   }
 
   Future<void> updatePlaces(List<Place> places) async {
     _annToPlace.clear();
-    if (_pointManager != null && _markerBytes != null) {
-      await _pointManager!.deleteAll();
-      final options = <PointAnnotationOptions>[];
+    // Círculos para distinguir visualmente
+    if (_circleManager != null) {
+      await _circleManager!.deleteAll();
+      final circleOpts = <CircleAnnotationOptions>[];
       for (final p in places) {
-        options.add(
-          PointAnnotationOptions(
+        circleOpts.add(
+          CircleAnnotationOptions(
             geometry: Point(coordinates: Position(p.longitude, p.latitude)),
-            image: _markerBytes!,
-            iconSize: 1.0,
+            circleColor: AppTheme.primaryMint.toARGB32(),
+            circleRadius: 8.0,
+            circleStrokeColor: Colors.white.toARGB32(),
+            circleStrokeWidth: 2.0,
           ),
         );
       }
-      if (options.isNotEmpty) {
-        final anns = await _pointManager!.createMulti(options);
+      if (circleOpts.isNotEmpty) {
+        final anns = await _circleManager!.createMulti(circleOpts);
         for (int i = 0; i < anns.length && i < places.length; i++) {
           final ann = anns[i];
           final plc = places[i];
           if (ann != null) _annToPlace[ann.id] = plc;
         }
       }
-      return;
     }
-    if (_circleManager != null) {
-      await _circleManager!.deleteAll();
-      final options = <CircleAnnotationOptions>[];
+
+    // Etiqueta de texto (sin ícono) usando PointAnnotation
+    if (_pointManager != null) {
+      await _pointManager!.deleteAll();
+      final pointOpts = <PointAnnotationOptions>[];
       for (final p in places) {
-        options.add(
-          CircleAnnotationOptions(
-            geometry: Point(coordinates: Position(p.longitude, p.latitude)),
-            circleColor: AppTheme.primaryMint.value,
-            circleRadius: 8.0,
-            circleStrokeColor: Colors.white.value,
-            circleStrokeWidth: 2.0,
-          ),
+        final opt = PointAnnotationOptions(
+          geometry: Point(coordinates: Position(p.longitude, p.latitude)),
+          textField: p.name,
+          textColor: Colors.white.toARGB32(),
+          textSize: 12.0,
+          textHaloColor: AppTheme.textBlack.toARGB32(),
+          textHaloWidth: 1.0,
+          textOffset: [1.2, 0.0],
+          textAnchor: TextAnchor.LEFT,
         );
+        pointOpts.add(opt);
       }
-      if (options.isNotEmpty) {
-        final anns = await _circleManager!.createMulti(options);
+      if (pointOpts.isNotEmpty) {
+        final anns = await _pointManager!.createMulti(pointOpts);
         for (int i = 0; i < anns.length && i < places.length; i++) {
           final ann = anns[i];
           final plc = places[i];
