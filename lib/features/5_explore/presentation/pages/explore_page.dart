@@ -9,6 +9,13 @@ import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import 'package:kamino_fr/core/utils/app_animations.dart';
 import 'package:kamino_fr/features/5_explore/presentation/provider/explore_provider.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
+import 'package:kamino_fr/config/environment_config.dart';
+import 'package:kamino_fr/core/auth/token_storage.dart';
+import 'package:kamino_fr/core/network/http_client.dart';
+import 'package:kamino_fr/features/5_chat/data/chat_api.dart';
+import 'package:kamino_fr/features/5_chat/data/chat_repository.dart';
+import 'package:kamino_fr/features/5_chat/presentation/widgets/chat_bottom_sheet.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/place_info_modal.dart';
 
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
@@ -208,14 +215,25 @@ class _PlaceCard extends StatelessWidget {
             },
             onChat: () {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Chat próximamente')),
+              final config = Provider.of<EnvironmentConfig>(context, listen: false);
+              final http = HttpClient(config, SecureTokenStorage());
+              final api = ChatApiImpl(http.dio);
+              final repo = ChatRepository(api: api);
+              AppAnimations.showFluidModalBottomSheet(
+                context: context,
+                builder: (_) => ChatBottomSheet(repository: repo, title: 'Chat: ${place.name}'),
               );
             },
             onDetails: () {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Detalles próximamente')),
+              showDialog(
+                context: context,
+                barrierColor: Colors.transparent,
+                builder: (context) => PlaceInfoModal(
+                  destinationName: place.name,
+                  imageUrl: place.imageUrl,
+                  description: place.description,
+                ),
               );
             },
           ),

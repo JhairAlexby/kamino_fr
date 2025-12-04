@@ -5,6 +5,7 @@ import 'package:kamino_fr/core/auth/token_storage.dart';
 import 'package:kamino_fr/core/app_router.dart';
 import 'package:kamino_fr/features/1_auth/data/models/user.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_repository.dart';
+import 'package:kamino_fr/features/3_profile/data/logbook_entry.dart';
 
 class ProfileProvider extends ChangeNotifier {
   final ProfileRepository repo;
@@ -15,6 +16,10 @@ class ProfileProvider extends ChangeNotifier {
   String? errorMessage;
   bool sessionExpired = false;
   User? user;
+  
+  // Local cache for logs (since backend doesn't support it yet)
+  final List<LogbookEntry> _logs = [];
+  List<LogbookEntry> get logs => _logs;
 
   ProfileProvider({required this.repo, required this.storage, required this.appState});
 
@@ -190,6 +195,22 @@ class ProfileProvider extends ChangeNotifier {
       notifyListeners();
       errorMessage = 'Error al actualizar visitados';
       notifyListeners();
+    }
+  }
+
+  // Logbook Methods
+  void addLog(LogbookEntry log) {
+    // Remove existing log for this place if any (to update it)
+    _logs.removeWhere((l) => l.placeId == log.placeId);
+    _logs.insert(0, log);
+    notifyListeners();
+  }
+
+  LogbookEntry? getLogForPlace(String placeId) {
+    try {
+      return _logs.firstWhere((l) => l.placeId == placeId);
+    } catch (_) {
+      return null;
     }
   }
 }

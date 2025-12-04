@@ -5,6 +5,8 @@ import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 
+import 'package:kamino_fr/features/4_routes/presentation/widgets/logbook_modal.dart';
+
 class MyRoutesPage extends StatefulWidget {
   const MyRoutesPage({super.key});
 
@@ -330,9 +332,32 @@ class _MyRoutesPageState extends State<MyRoutesPage> with SingleTickerProviderSt
       separatorBuilder: (_, __) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final place = places[index];
-        final hasLog = false; // TODO: Implement log logic
+        final profileProvider = context.watch<ProfileProvider>();
+        final existingLog = profileProvider.getLogForPlace(place.id);
 
-        return _RouteCard(place: place, hasLog: hasLog);
+        return _RouteCard(
+          place: place, 
+          hasLog: existingLog != null,
+          onLogAction: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => LogbookModal(
+                placeId: place.id,
+                placeName: place.name,
+                placeImageUrl: place.imageUrl,
+                existingLog: existingLog,
+                onSave: (log) {
+                  context.read<ProfileProvider>().addLog(log);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Bitácora guardada correctamente')),
+                  );
+                },
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -341,8 +366,13 @@ class _MyRoutesPageState extends State<MyRoutesPage> with SingleTickerProviderSt
 class _RouteCard extends StatefulWidget {
   final Place place;
   final bool hasLog;
+  final VoidCallback onLogAction;
 
-  const _RouteCard({required this.place, required this.hasLog});
+  const _RouteCard({
+    required this.place, 
+    required this.hasLog,
+    required this.onLogAction,
+  });
 
   @override
   State<_RouteCard> createState() => _RouteCardState();
@@ -479,11 +509,7 @@ class _RouteCardState extends State<_RouteCard> with SingleTickerProviderStateMi
                     const SizedBox(height: 10),
                     // Botón de Bitácora
                     InkWell(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Abrir/Crear bitácora próximamente')),
-                        );
-                      },
+                      onTap: widget.onLogAction,
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

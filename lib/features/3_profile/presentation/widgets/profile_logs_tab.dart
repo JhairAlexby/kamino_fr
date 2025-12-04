@@ -2,32 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import 'package:kamino_fr/features/3_profile/presentation/widgets/log_details_modal.dart';
 
+import 'package:provider/provider.dart';
+import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
+import 'package:kamino_fr/features/3_profile/data/logbook_entry.dart';
+
 class ProfileLogsTab extends StatelessWidget {
   const ProfileLogsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Mock data for logs
-    final logs = [
-      {
-        'placeName': 'Parque Central',
-        'date': '02/12/2023',
-        'image': 'assets/images/3dmapa.png',
-        'excerpt': 'Fue un día increíble, el clima estaba perfecto para caminar y tomar fotos.',
-      },
-      {
-        'placeName': 'Playa El Tunco',
-        'date': '10/11/2023',
-        'image': 'assets/images/3dmapa.png',
-        'excerpt': 'Las olas estaban grandes, comimos mariscos y vimos el atardecer.',
-      },
-      {
-        'placeName': 'Volcán de Santa Ana',
-        'date': '05/10/2023',
-        'image': 'assets/images/3dmapa.png',
-        'excerpt': 'La caminata fue dura pero la vista del lago de Coatepeque valió la pena.',
-      },
-    ];
+    final logs = context.watch<ProfileProvider>().logs;
 
     if (logs.isEmpty) {
       return Center(
@@ -66,7 +50,7 @@ class ProfileLogsTab extends StatelessWidget {
 }
 
 class _LogCard extends StatefulWidget {
-  final Map<String, String> log;
+  final LogbookEntry log;
 
   const _LogCard({required this.log});
 
@@ -106,7 +90,12 @@ class _LogCardState extends State<_LogCard> with SingleTickerProviderStateMixin 
         showDialog(
           context: context,
           barrierColor: Colors.black.withOpacity(0.8),
-          builder: (context) => LogDetailsModal(log: widget.log),
+          builder: (context) => LogDetailsModal(log: {
+            'placeName': widget.log.placeName,
+            'date': '${widget.log.date.day}/${widget.log.date.month}/${widget.log.date.year}',
+            'image': widget.log.placeImageUrl,
+            'excerpt': widget.log.notes,
+          }),
         );
       },
       child: ScaleTransition(
@@ -138,11 +127,17 @@ class _LogCardState extends State<_LogCard> with SingleTickerProviderStateMixin 
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  widget.log['image']!,
+                child: Image.network(
+                  widget.log.placeImageUrl,
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 80,
+                    height: 80,
+                    color: Colors.grey[800],
+                    child: const Icon(Icons.image_not_supported, color: Colors.white),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -151,7 +146,7 @@ class _LogCardState extends State<_LogCard> with SingleTickerProviderStateMixin 
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.log['placeName']!,
+                      widget.log.placeName,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -166,7 +161,7 @@ class _LogCardState extends State<_LogCard> with SingleTickerProviderStateMixin 
                         Icon(Icons.calendar_today, size: 12, color: Colors.white.withOpacity(0.6)),
                         const SizedBox(width: 4),
                         Text(
-                          widget.log['date']!,
+                          '${widget.log.date.day}/${widget.log.date.month}/${widget.log.date.year}',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withOpacity(0.6),
@@ -176,7 +171,7 @@ class _LogCardState extends State<_LogCard> with SingleTickerProviderStateMixin 
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      widget.log['excerpt']!,
+                      widget.log.notes,
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white.withOpacity(0.8),
