@@ -168,4 +168,24 @@ class NavigationProvider extends ChangeNotifier {
     return sum;
   }
 
+  bool hasArrived(double lat, double lon, {double thresholdMeters = 25}) {
+    final remaining = remainingDistanceMeters(lat, lon);
+    return remaining <= thresholdMeters;
+  }
+
+  void endRoute() {
+    clearRoute();
+  }
+
+  int progressIndex(double lat, double lon) {
+    if (_routeCoords.isEmpty) return 0;
+    int nearestIdx = 0;
+    double minD = double.infinity;
+    for (int i = 0; i < _routeCoords.length; i++) {
+      final d = GeoUtils.haversineMeters(lat, lon, _routeCoords[i].lat.toDouble(), _routeCoords[i].lng.toDouble());
+      if (d < minD) { minD = d; nearestIdx = i; }
+    }
+    return nearestIdx;
+  }
+
 }

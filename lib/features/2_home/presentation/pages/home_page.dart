@@ -68,6 +68,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final PanelController _panelController = PanelController();
   
   double _userSpeed = 0.0;
+  int _lastProgressIdx = 0;
   
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
@@ -148,22 +149,59 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void _startFollow(NavigationProvider navProvider) {
     _posSub?.cancel();
-    _posSub = geo.Geolocator.getPositionStream(locationSettings: const geo.LocationSettings(accuracy: geo.LocationAccuracy.best, distanceFilter: 10))
+    _posSub = geo.Geolocator.getPositionStream(locationSettings: const geo.LocationSettings(accuracy: geo.LocationAccuracy.best, distanceFilter: 3))
         .listen((geoPos) async {
       if (!_followUser) return;
       final now = DateTime.now();
-      if (_lastCameraUpdate != null && now.difference(_lastCameraUpdate!).inMilliseconds < 1000) return;
+      if (_lastCameraUpdate != null && now.difference(_lastCameraUpdate!).inMilliseconds < 300) return;
       _lastCameraUpdate = now;
       final pos = Position(geoPos.longitude, geoPos.latitude);
       await _mapboxMap?.setCamera(CameraOptions(center: Point(coordinates: pos)));
       _userSpeed = geoPos.speed;
       
-      // Actualizar ETA si hay ruta activa
       if (navProvider.routeCoords.isNotEmpty) {
         final remaining = navProvider.remainingDistanceMeters(geoPos.latitude, geoPos.longitude);
         navProvider.updateEta(remaining, _userSpeed);
+        final idx = navProvider.progressIndex(geoPos.latitude, geoPos.longitude);
+        if (idx > _lastProgressIdx) {
+          await _updateRouteRemaining(navProvider.routeCoords, idx);
+          _lastProgressIdx = idx;
+        }
+        if (navProvider.hasArrived(geoPos.latitude, geoPos.longitude)) {
+          _finalizeRoute(navProvider, auto: true);
+        }
       }
     });
+  }
+
+  Future<void> _updateRouteRemaining(List<Position> coords, int startIdx) async {
+    if (_routeManager == null) return;
+    if (coords.length < 2) return;
+    final start = startIdx.clamp(0, coords.length - 1);
+    final remaining = start < coords.length ? coords.sublist(start) : <Position>[];
+    await _routeManager!.deleteAll();
+    if (remaining.length < 2) return;
+    final ls = LineString(coordinates: remaining);
+    final opt = PolylineAnnotationOptions(
+      geometry: ls,
+      lineColor: AppTheme.primaryMint.value,
+      lineWidth: 6,
+      lineOpacity: 0.8,
+    );
+    await _routeManager!.create(opt);
+  }
+
+  Future<void> _finalizeRoute(NavigationProvider navVm, {bool auto = false}) async {
+    try {
+      await _routeManager?.deleteAll();
+    } catch (_) {}
+    navVm.endRoute();
+    _lastProgressIdx = 0;
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(auto ? 'Has llegado. Ruta finalizada' : 'Ruta finalizada')),
+      );
+    }
   }
 
   Future<void> _onCameraChanged(BuildContext ctx) async {
@@ -251,6 +289,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     if (navVm.routeCoords.isNotEmpty) {
       await _fitCameraToRoute(navVm.routeCoords);
       await _drawRoute(navVm.routeCoords);
+      _lastProgressIdx = 0;
       try {
         final config = Provider.of<EnvironmentConfig>(context, listen: false);
         final http = HttpClient(config, SecureTokenStorage());
@@ -385,6 +424,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           if (navVm.routeCoords.isNotEmpty && _mapboxMap != null) {
             _fitCameraToRoute(navVm.routeCoords);
             _drawRoute(navVm.routeCoords);
+            _lastProgressIdx = 0;
           }
           
           return Scaffold(
@@ -527,11 +567,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       key: const ValueKey('home_fab'),
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      EtaIndicator(
-                        etaText: navVm.etaText,
-                        navMode: navVm.navMode,
-                      ),
+                      children: [
+                        EtaIndicator(
+                          etaText: navVm.etaText,
+                          navMode: navVm.navMode,
+                        ),
+                        if (navVm.routeCoords.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryMint,
+                                foregroundColor: AppTheme.textBlack,
+                              ),
+                              onPressed: () => _finalizeRoute(navVm, auto: false),
+                              icon: const Icon(Icons.flag),
+                              label: const Text('Finalizar ruta'),
+                            ),
+                          ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
