@@ -19,11 +19,19 @@ class LogDetailsModal extends StatelessWidget {
           // Image
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Image.asset(
+            child: Image.network(
               log['image']!,
               width: double.infinity,
               height: 200,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: double.infinity,
+                  height: 200,
+                  color: Colors.grey[800],
+                  child: const Icon(Icons.image_not_supported, color: Colors.white54, size: 48),
+                );
+              },
             ),
           ),
           const SizedBox(height: 16),
