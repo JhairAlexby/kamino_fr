@@ -9,6 +9,7 @@ import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 import 'package:kamino_fr/core/utils/app_animations.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/place_info_modal.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -37,6 +38,30 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   void _onProfileChanged() {
     _loadFavorites();
+  }
+
+  Future<void> _openPlaceInfo(Place place) async {
+    try {
+      final config = Provider.of<EnvironmentConfig>(context, listen: false);
+      final http = HttpClient(config, SecureTokenStorage());
+      final api = PlacesApiImpl(http.dio);
+      final repo = PlacesRepository(api: api, maxRetries: config.maxRetries);
+      final detailed = await repo.getById(place.id);
+      final p = detailed ?? place;
+      showDialog(
+        context: context,
+        barrierColor: Colors.transparent,
+        builder: (context) => PlaceInfoModal(
+          destinationName: p.name,
+          imageUrl: p.imageUrl,
+          description: p.description,
+        ),
+      );
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo cargar la información del lugar')),
+      );
+    }
   }
 
   Future<void> _loadFavorites() async {
@@ -152,7 +177,9 @@ class _FavoritesList extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final p = places[index];
-        return Container(
+        return GestureDetector(
+          onTap: () => (context.findAncestorStateOfType<_FavoritesPageState>())?._openPlaceInfo(p),
+          child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             gradient: const RadialGradient(
@@ -219,6 +246,7 @@ class _FavoritesList extends StatelessWidget {
                 ),
               ),
             ],
+          ),
           ),
         );
       },

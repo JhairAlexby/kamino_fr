@@ -9,6 +9,8 @@ class PlacesRepository {
 
   final Map<String, List<Place>> _cache = {};
   final Map<String, DateTime> _ts = {};
+  final Map<String, Place> _cacheById = {};
+  final Map<String, DateTime> _tsById = {};
 
   PlacesRepository({
     required this.api,
@@ -101,5 +103,30 @@ class PlacesRepository {
     final latR = double.parse(lat.toStringAsFixed(5));
     final lngR = double.parse(lng.toStringAsFixed(5));
     return 'lat=$latR|lng=$lngR|r=$rl|l=$limit';
+  }
+
+  Future<Place?> getById(String id) async {
+    final now = DateTime.now();
+    final ts = _tsById[id];
+    if (ts != null && now.difference(ts) < ttl) {
+      final cached = _cacheById[id];
+      if (cached != null) return cached;
+    }
+
+    int attempt = 0;
+    while (true) {
+      try {
+        final item = await api.getById(id);
+        if (item != null) {
+          _cacheById[id] = item;
+          _tsById[id] = DateTime.now();
+        }
+        return item;
+      } catch (e) {
+        attempt++;
+        if (attempt > maxRetries) rethrow;
+        await Future.delayed(Duration(milliseconds: 200 * attempt * attempt));
+      }
+    }
   }
 }
