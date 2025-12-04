@@ -7,12 +7,14 @@ class PlaceInfoModal extends StatelessWidget {
   final String destinationName;
   final String? imageUrl;
   final String? description;
+  final bool showChatButton;
 
   const PlaceInfoModal({
     super.key,
     required this.destinationName,
     this.imageUrl,
     this.description,
+    this.showChatButton = true,
   });
 
   @override
@@ -81,44 +83,44 @@ class PlaceInfoModal extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 
-                // Botón para Chat Bot
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Acción para abrir el chat bot
-                      Navigator.of(context).pop(); // O navegar al chat
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Abriendo chat con guía IA...')),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryMint,
-                      foregroundColor: AppTheme.textBlack,
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                      elevation: 8,
-                      shadowColor: AppTheme.primaryMint.withOpacity(0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                if (showChatButton) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Abriendo chat con guía IA...')),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryMint,
+                        foregroundColor: AppTheme.textBlack,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                        elevation: 8,
+                        shadowColor: AppTheme.primaryMint.withOpacity(0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.chat_bubble_outline, size: 24),
+                          SizedBox(width: 12),
+                          Text(
+                            'Chatear con Guía IA',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.chat_bubble_outline, size: 24),
-                        SizedBox(width: 12),
-                        Text(
-                          'Chatear con Guía IA',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
+                ],
               ],
             ),
           ),

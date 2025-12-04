@@ -10,6 +10,9 @@ import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 import 'package:kamino_fr/core/utils/app_animations.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/place_info_modal.dart';
+import 'package:kamino_fr/features/2_home/presentation/provider/navigation_provider.dart';
+import 'package:kamino_fr/features/2_home/presentation/provider/home_provider.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -55,11 +58,33 @@ class _FavoritesPageState extends State<FavoritesPage> {
           destinationName: p.name,
           imageUrl: p.imageUrl,
           description: p.description,
+          showChatButton: false,
         ),
       );
     } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se pudo cargar la información del lugar')),
+      );
+    }
+  }
+
+  Future<void> _repeatRoute(Place place) async {
+    try {
+      final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+      final navVm = Provider.of<NavigationProvider>(context, listen: false);
+      await navVm.calculateRoute(
+        latOrigin: geoPos.latitude,
+        lonOrigin: geoPos.longitude,
+        latDest: place.latitude,
+        lonDest: place.longitude,
+        currentSpeed: geoPos.speed,
+        destinationName: place.name,
+        showOverlay: false,
+      );
+      Provider.of<HomeProvider>(context, listen: false).setTab(0);
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo generar la ruta')),
       );
     }
   }
@@ -180,8 +205,8 @@ class _FavoritesList extends StatelessWidget {
         return GestureDetector(
           onTap: () => (context.findAncestorStateOfType<_FavoritesPageState>())?._openPlaceInfo(p),
           child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
+           padding: const EdgeInsets.all(12),
+           decoration: BoxDecoration(
             gradient: const RadialGradient(
               center: Alignment.center,
               radius: 1.2,
@@ -241,6 +266,33 @@ class _FavoritesList extends StatelessWidget {
                       style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.6)),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: InkWell(
+                        onTap: () => (context.findAncestorStateOfType<_FavoritesPageState>())?._repeatRoute(p),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryMint.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppTheme.primaryMint.withOpacity(0.5), width: 1),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.refresh, size: 16, color: AppTheme.primaryMint),
+                              SizedBox(width: 6),
+                              Text(
+                                'Repetir ruta',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryMint),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

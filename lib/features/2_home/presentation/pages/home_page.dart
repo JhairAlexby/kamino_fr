@@ -368,6 +368,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         builder: (context, vm, navVm, child) {
           // Listener para dibujar la ruta cuando cambie en el provider
           if (navVm.routeCoords.isNotEmpty && _mapboxMap != null) {
+            _fitCameraToRoute(navVm.routeCoords);
             _drawRoute(navVm.routeCoords);
           }
           
