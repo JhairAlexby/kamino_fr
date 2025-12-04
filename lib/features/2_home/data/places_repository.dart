@@ -9,6 +9,7 @@ class PlacesRepository {
 
   final Map<String, List<Place>> _cache = {};
   final Map<String, DateTime> _ts = {};
+  final Map<String, Place> _byIdCache = {};
 
   PlacesRepository({
     required this.api,
@@ -79,6 +80,25 @@ class PlacesRepository {
           sortOrder: sortOrder,
         );
         return _dedup(items);
+      } catch (e) {
+        attempt++;
+        if (attempt > maxRetries) rethrow;
+        await Future.delayed(Duration(milliseconds: 200 * attempt * attempt));
+      }
+    }
+  }
+
+  Future<Place?> getById(String id) async {
+    final cached = _byIdCache[id];
+    if (cached != null) return cached;
+    int attempt = 0;
+    while (true) {
+      try {
+        final item = await api.getById(id);
+        if (item != null) {
+          _byIdCache[id] = item;
+        }
+        return item;
       } catch (e) {
         attempt++;
         if (attempt > maxRetries) rethrow;
