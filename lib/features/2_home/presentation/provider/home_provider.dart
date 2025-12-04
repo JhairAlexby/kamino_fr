@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
-
-class RecommendationItem {
-  final String title;
-  final String category;
-  final String distanceText;
-  RecommendationItem({
-    required this.title,
-    required this.category,
-    required this.distanceText,
-  });
-}
+import 'package:kamino_fr/features/2_home/data/models/recommendation.dart';
+import 'package:kamino_fr/features/2_home/data/recommender_repository.dart';
 
 class HomeProvider extends ChangeNotifier {
+  final RecommenderRepository recommenderRepository;
+  HomeProvider({required this.recommenderRepository}) {
+    loadRecommendations();
+  }
+
   int currentTab = 0;
 
-  final List<RecommendationItem> recommendations = [
-    RecommendationItem(title: 'Café Central', category: 'Café', distanceText: '5 min'),
-    RecommendationItem(title: 'Museo de Arte', category: 'Cultura', distanceText: '12 min'),
-    RecommendationItem(title: 'Parque Norte', category: 'Naturaleza', distanceText: '8 min'),
-  ];
+  List<Recommendation> _recommendations = [];
+  bool _loadingRecommendations = false;
+  String? _recommendationsError;
+
+  List<Recommendation> get recommendations => _recommendations;
+  bool get loadingRecommendations => _loadingRecommendations;
+  String? get recommendationsError => _recommendationsError;
 
   final TextEditingController searchController = TextEditingController();
   String searchQuery = '';
@@ -28,18 +26,19 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void onInterestButtonPressed() {
-    recommendations.insert(
-      0,
-      RecommendationItem(title: 'Restaurante La Plaza', category: 'Comida', distanceText: '10 min'),
-    );
+  Future<void> loadRecommendations() async {
+    _loadingRecommendations = true;
+    _recommendationsError = null;
     notifyListeners();
-  }
-
-  void onSelect(RecommendationItem item) {
-  }
-
-  void onNavigateTo(RecommendationItem item) {
+    try {
+      final res = await recommenderRepository.getRecommendations();
+      _recommendations = res.recommendations;
+    } catch (_) {
+      _recommendationsError = 'No se pudieron cargar las recomendaciones';
+    } finally {
+      _loadingRecommendations = false;
+      notifyListeners();
+    }
   }
 
   void onSearchChanged(String value) {
