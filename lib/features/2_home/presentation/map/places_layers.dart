@@ -15,13 +15,20 @@ class PlacesLayerController {
   PlacesLayerController({required this.map});
 
   Future<void> ensureInitialized() async {
-    if (_pointManager == null && _circleManager == null) {
+    if (_pointManager == null) {
       try {
-        _markerBytes = await _loadMarkerBytes('assets/images/marker.png');
         _pointManager = await map.annotations.createPointAnnotationManager();
-      } catch (_) {
+      } catch (_) {}
+    }
+    if (_circleManager == null) {
+      try {
         _circleManager = await map.annotations.createCircleAnnotationManager();
-      }
+      } catch (_) {}
+    }
+    try {
+      _markerBytes = await _loadMarkerBytes('assets/images/marker.png');
+    } catch (_) {
+      _markerBytes = null;
     }
   }
 
@@ -32,33 +39,12 @@ class PlacesLayerController {
 
   Future<void> updatePlaces(List<Place> places) async {
     _annToPlace.clear();
-    if (_pointManager != null && _markerBytes != null) {
-      await _pointManager!.deleteAll();
-      final options = <PointAnnotationOptions>[];
-      for (final p in places) {
-        options.add(
-          PointAnnotationOptions(
-            geometry: Point(coordinates: Position(p.longitude, p.latitude)),
-            image: _markerBytes!,
-            iconSize: 1.0,
-          ),
-        );
-      }
-      if (options.isNotEmpty) {
-        final anns = await _pointManager!.createMulti(options);
-        for (int i = 0; i < anns.length && i < places.length; i++) {
-          final ann = anns[i];
-          final plc = places[i];
-          if (ann != null) _annToPlace[ann.id] = plc;
-        }
-      }
-      return;
-    }
+    // Círculos para distinguir visualmente
     if (_circleManager != null) {
       await _circleManager!.deleteAll();
-      final options = <CircleAnnotationOptions>[];
+      final circleOpts = <CircleAnnotationOptions>[];
       for (final p in places) {
-        options.add(
+        circleOpts.add(
           CircleAnnotationOptions(
             geometry: Point(coordinates: Position(p.longitude, p.latitude)),
             circleColor: AppTheme.primaryMint.value,
@@ -68,8 +54,35 @@ class PlacesLayerController {
           ),
         );
       }
-      if (options.isNotEmpty) {
-        final anns = await _circleManager!.createMulti(options);
+      if (circleOpts.isNotEmpty) {
+        final anns = await _circleManager!.createMulti(circleOpts);
+        for (int i = 0; i < anns.length && i < places.length; i++) {
+          final ann = anns[i];
+          final plc = places[i];
+          if (ann != null) _annToPlace[ann.id] = plc;
+        }
+      }
+    }
+
+    // Etiqueta de texto (sin ícono) usando PointAnnotation
+    if (_pointManager != null) {
+      await _pointManager!.deleteAll();
+      final pointOpts = <PointAnnotationOptions>[];
+      for (final p in places) {
+        final opt = PointAnnotationOptions(
+          geometry: Point(coordinates: Position(p.longitude, p.latitude)),
+          textField: p.name,
+          textColor: Colors.white.value,
+          textSize: 12.0,
+          textHaloColor: AppTheme.textBlack.value,
+          textHaloWidth: 1.0,
+          textOffset: [1.2, 0.0],
+          textAnchor: TextAnchor.LEFT,
+        );
+        pointOpts.add(opt);
+      }
+      if (pointOpts.isNotEmpty) {
+        final anns = await _pointManager!.createMulti(pointOpts);
         for (int i = 0; i < anns.length && i < places.length; i++) {
           final ann = anns[i];
           final plc = places[i];

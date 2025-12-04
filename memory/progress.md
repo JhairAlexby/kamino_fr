@@ -9,3 +9,6 @@
  - Pruebas añadidas para Haversine (~34 km) y ETA realista.
  - Añadida sección de recomendaciones: carga automática desde backend y renderizado en panel de inicio con estados de carga y error.
  - Pruebas para parseo de recomendaciones y deduplicación en repositorio.
+- Etiquetas con el nombre del lugar añadidas junto al ícono de los marcadores del mapa (Mapbox PointAnnotation).
+- Corrección: etiquetas visibles aunque falte el asset del ícono, usando el ícono integrado `marker-15`. Se eliminan flags de solapamiento no soportados por `PointAnnotationOptions`.
+ - Mejora: círculos restaurados y coexistiendo con etiquetas de texto (se crean `CircleAnnotation` y `PointAnnotation` sin ícono por cada lugar).
