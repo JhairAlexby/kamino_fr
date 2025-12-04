@@ -161,7 +161,7 @@ class _GenerationModalState extends State<GenerationModal>
                   );
                   return;
                 }
-                Navigator.of(context).pop(true);
+                Navigator.of(context).pop(_selectedHours);
               },
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
