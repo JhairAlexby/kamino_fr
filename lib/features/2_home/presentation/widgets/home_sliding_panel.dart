@@ -51,13 +51,9 @@ class HomeExpandedPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = Provider.of<HomeProvider>(context);
-    final recs = vm.recommendations;
-    final hiddenGems = recs.where((e) => e.isHiddenGem).toList()
-      ..sort((a, b) => b.finalScore.compareTo(a.finalScore));
-    final topHidden = hiddenGems.take(3).toList();
-    final nonHidden = recs.where((e) => !e.isHiddenGem).toList();
-    final topOverall = [...recs]..sort((a, b) => b.finalScore.compareTo(a.finalScore));
-    final topWeek = topOverall.take(3).toList();
+    final topHidden = vm.hiddenTop;
+    final nonHidden = vm.nonHidden;
+    final topWeek = vm.topWeek;
 
     return ClipRRect(
       borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
@@ -71,13 +67,11 @@ class HomeExpandedPanel extends StatelessWidget {
           ),
           boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 20, offset: Offset(0, -6))],
         ),
-        child: SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: ListView(
+            controller: scrollController,
+            children: [
                 if (vm.loadingRecommendations)
                   const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(color: AppTheme.primaryMint)))
                 else if (vm.recommendationsError != null)
@@ -124,8 +118,7 @@ class HomeExpandedPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                 ],
-              ],
-            ),
+            ],
           ),
         ),
       ),
