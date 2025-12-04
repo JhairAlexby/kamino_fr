@@ -465,33 +465,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               onCameraChanged: (ctx) => _onCameraChanged(ctx),
                             ),
                           ),
-                          Positioned(
-                            right: 16,
-                            top: MediaQuery.of(context).padding.top + 72,
-                            child: FloatingActionButton(
-                              heroTag: 'voice_test_btn',
-                              backgroundColor: AppTheme.primaryMint,
-                              elevation: 4,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              onPressed: () async {
-                                try {
-                                  final config = Provider.of<EnvironmentConfig>(context, listen: false);
-                                  final http = HttpClient(config, SecureTokenStorage());
-                                  final api = NarratorApiImpl(http.dio);
-                                  final repo = NarratorRepository(api: api);
-                                  final narrator = NarratorService(repository: repo);
-                                  await narrator.speak('funcionamiento de voz');
-                                } catch (_) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Error al probar la voz')),
-                                    );
-                                  }
-                                }
-                              },
-                              child: const Icon(Icons.volume_up, color: AppTheme.textBlack),
-                            ),
-                          ),
                           RouteGenerationOverlay(isVisible: navVm.isGeneratingRouteOverlay),
                         ],
                       ),
