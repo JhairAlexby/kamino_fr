@@ -144,4 +144,45 @@ class ProfileProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  bool isVisited(String placeId) {
+    return user?.visitedPlaces.contains(placeId) ?? false;
+  }
+
+  Future<void> toggleVisited(String placeId) async {
+    if (user == null) return;
+
+    final isCurrentlyVisited = isVisited(placeId);
+    final currentVisited = List<String>.from(user!.visitedPlaces);
+
+    // Optimistic update
+    if (isCurrentlyVisited) {
+      currentVisited.remove(placeId);
+    } else {
+      currentVisited.add(placeId);
+    }
+
+    user = user!.copyWith(visitedPlaces: currentVisited);
+    notifyListeners();
+
+    try {
+      if (isCurrentlyVisited) {
+        await repo.removeVisited(placeId);
+      } else {
+        await repo.addVisited(placeId);
+      }
+    } catch (e) {
+      // Revert on error
+      final revertedVisited = List<String>.from(user!.visitedPlaces);
+      if (isCurrentlyVisited) {
+        revertedVisited.add(placeId);
+      } else {
+        revertedVisited.remove(placeId);
+      }
+      user = user!.copyWith(visitedPlaces: revertedVisited);
+      notifyListeners();
+      errorMessage = 'Error al actualizar visitados';
+      notifyListeners();
+    }
+  }
 }

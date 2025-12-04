@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/core/app_theme.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:kamino_fr/features/2_home/presentation/provider/navigation_provider.dart';
+import 'package:kamino_fr/features/2_home/presentation/provider/home_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/place_preview_modal.dart';
 import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import 'package:kamino_fr/core/utils/app_animations.dart';
@@ -168,8 +171,7 @@ class _PlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final profileProvider = context.watch<ProfileProvider>();
     final isLiked = profileProvider.isLiked(place.id);
-    // TODO: Implement logic for isVisited with real user data
-    // final isVisited = false;
+    final isVisited = profileProvider.isVisited(place.id);
 
     return GestureDetector(
       onTap: () {
@@ -177,11 +179,32 @@ class _PlaceCard extends StatelessWidget {
           context: context,
           builder: (ctx) => PlacePreviewModal(
             place: place,
-            onNavigate: () {
+            onNavigate: () async {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Navegación próximamente')),
-              );
+              final navProvider = context.read<NavigationProvider>();
+              final homeProvider = context.read<HomeProvider>();
+              
+              try {
+                final geoPos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
+                
+                await navProvider.calculateRoute(
+                  latOrigin: geoPos.latitude,
+                  lonOrigin: geoPos.longitude,
+                  latDest: place.latitude,
+                  lonDest: place.longitude,
+                  currentSpeed: geoPos.speed,
+                  showOverlay: false,
+                  destinationName: place.name,
+                );
+                
+                // Switch to map tab (index 0)
+                homeProvider.setTab(0);
+                
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error al calcular ruta: $e')),
+                );
+              }
             },
             onChat: () {
               Navigator.pop(ctx);
@@ -246,7 +269,7 @@ class _PlaceCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      /* if (isVisited)
+                      if (isVisited)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
@@ -262,7 +285,7 @@ class _PlaceCard extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ), */
+                        ),
                     ],
                   ),
                   const SizedBox(height: 4),

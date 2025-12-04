@@ -1,14 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 
-class MyRoutesPage extends StatelessWidget {
+class MyRoutesPage extends StatefulWidget {
   const MyRoutesPage({super.key});
+
+  @override
+  State<MyRoutesPage> createState() => _MyRoutesPageState();
+}
+
+class _MyRoutesPageState extends State<MyRoutesPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profileProvider = context.read<ProfileProvider>();
+      if (profileProvider.user == null && !profileProvider.isLoading) {
+        profileProvider.loadProfile();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     // Datos simulados de rutas/lugares visitados
     final visitedPlaces = [
       {
+        'id': 'mock-parque-central',
         'name': 'Parque Central',
         'date': '02/12/2023',
         'image': 'assets/images/3dmapa.png',
@@ -16,6 +35,7 @@ class MyRoutesPage extends StatelessWidget {
         'hasLog': true, // Simulación: ya tiene bitácora
       },
       {
+        'id': 'mock-museo-arte',
         'name': 'Museo de Arte Moderno',
         'date': '28/11/2023',
         'image': 'assets/images/3dmapa.png',
@@ -23,6 +43,7 @@ class MyRoutesPage extends StatelessWidget {
         'hasLog': false, // Simulación: no tiene bitácora
       },
       {
+        'id': 'mock-jardin-botanico',
         'name': 'Jardín Botánico',
         'date': '15/11/2023',
         'image': 'assets/images/3dmapa.png',
@@ -168,15 +189,38 @@ class _RouteCardState extends State<_RouteCard> with SingleTickerProviderStateMi
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      widget.place['name'] as String,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.place['name'] as String,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Consumer<ProfileProvider>(
+                          builder: (context, profile, _) {
+                            final placeId = widget.place['id'] as String;
+                            final isLiked = profile.isLiked(placeId);
+                            return InkWell(
+                              onTap: () => profile.toggleFavorite(placeId),
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: Icon(
+                                  isLiked ? Icons.favorite : Icons.favorite_border,
+                                  color: isLiked ? Colors.red : Colors.white54,
+                                  size: 20,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Row(

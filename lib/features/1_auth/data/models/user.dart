@@ -10,6 +10,7 @@ class User {
   final String? gender;
   final List<String> preferredTags;
   final List<String> favoritePlaces;
+  final List<String> visitedPlaces;
 
   User({
     required this.id,
@@ -23,8 +24,10 @@ class User {
     this.gender,
     List<String>? preferredTags,
     List<String>? favoritePlaces,
+    List<String>? visitedPlaces,
   }) : preferredTags = preferredTags ?? const [],
-       favoritePlaces = favoritePlaces ?? const [];
+       favoritePlaces = favoritePlaces ?? const [],
+       visitedPlaces = visitedPlaces ?? const [];
 
   User copyWith({
     String? id,
@@ -38,6 +41,7 @@ class User {
     String? gender,
     List<String>? preferredTags,
     List<String>? favoritePlaces,
+    List<String>? visitedPlaces,
   }) {
     return User(
       id: id ?? this.id,
@@ -51,6 +55,7 @@ class User {
       gender: gender ?? this.gender,
       preferredTags: preferredTags ?? this.preferredTags,
       favoritePlaces: favoritePlaces ?? this.favoritePlaces,
+      visitedPlaces: visitedPlaces ?? this.visitedPlaces,
     );
   }
 
@@ -67,6 +72,7 @@ class User {
       gender: json['gender'] as String?,
       preferredTags: (json['preferredTags'] as List?)?.map((e) => e.toString()).toList() ?? const [],
       favoritePlaces: (json['favoritePlaces'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+      visitedPlaces: (json['visitedPlaces'] as List?)?.map((e) => e.toString()).toList() ?? const [],
     );
   }
 }

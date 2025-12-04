@@ -42,6 +42,12 @@ class _FakeProfileApi implements ProfileApi {
 
   @override
   Future<void> removeFavorite(String placeId) async => throw UnimplementedError();
+
+  @override
+  Future<void> addVisited(String placeId) async => throw UnimplementedError();
+
+  @override
+  Future<void> removeVisited(String placeId) async => throw UnimplementedError();
 }
 
 class _MemoryTokenStorage implements TokenStorage {
