@@ -16,14 +16,12 @@ class HomeProvider extends ChangeNotifier {
 
   List<Recommendation> _hiddenTop = [];
   List<Recommendation> _nonHidden = [];
-  List<Recommendation> _topWeek = [];
 
   List<Recommendation> get recommendations => _recommendations;
   bool get loadingRecommendations => _loadingRecommendations;
   String? get recommendationsError => _recommendationsError;
   List<Recommendation> get hiddenTop => _hiddenTop;
   List<Recommendation> get nonHidden => _nonHidden;
-  List<Recommendation> get topWeek => _topWeek;
 
   final TextEditingController searchController = TextEditingController();
   String searchQuery = '';
@@ -55,8 +53,6 @@ class HomeProvider extends ChangeNotifier {
       ..sort((a, b) => b.finalScore.compareTo(a.finalScore));
     _hiddenTop = hidden.take(10).toList();
     _nonHidden = recs.where((e) => !e.isHiddenGem).toList();
-    final overall = [...recs]..sort((a, b) => b.finalScore.compareTo(a.finalScore));
-    _topWeek = overall.take(10).toList();
   }
 
   void onSearchChanged(String value) {
