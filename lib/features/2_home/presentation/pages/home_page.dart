@@ -16,7 +16,7 @@ import 'package:kamino_fr/core/network/http_client.dart';
 import 'package:kamino_fr/features/2_home/data/places_api.dart';
 import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/features/2_home/data/navigation_repository.dart';
-import 'package:kamino_fr/features/4_routes/presentation/pages/my_routes_page.dart';
+import 'package:kamino_fr/features/4_routes/presentation/pages/favorites_page.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_provider.dart';
 import 'package:kamino_fr/features/5_explore/presentation/provider/explore_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/navigation_provider.dart';
@@ -485,7 +485,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     child: vm.currentTab == 3
                         ? const ProfilePage(key: ValueKey('profile'))
                         : vm.currentTab == 2
-                            ? const MyRoutesPage(key: ValueKey('my_routes'))
+                            ? const FavoritesPage(key: ValueKey('favorites'))
                             : vm.currentTab == 1
                                 ? const ExplorePage(key: ValueKey('explore'))
                                 : const SizedBox.shrink(),
@@ -687,7 +687,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         destinations: const [
                           NavigationDestination(icon: Icon(Icons.home), selectedIcon: Icon(Icons.home), label: 'Inicio'),
                           NavigationDestination(icon: Icon(Icons.search), selectedIcon: Icon(Icons.search), label: 'Explorar'),
-                          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Mis Rutas'),
+                          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Favoritos'),
                           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Perfil'),
                         ],
                       ),
