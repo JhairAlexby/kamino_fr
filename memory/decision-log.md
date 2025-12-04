@@ -18,4 +18,6 @@
 - Cambio: se crean ambos managers (puntos y círculos) y se renderiza círculo + etiqueta simultáneamente. La etiqueta se dibuja con `PointAnnotation` sin ícono; el círculo con `CircleAnnotation` mantiene el estilo de distinción visual. Se elimina el campo `_markerBytes` no usado y se reemplaza el uso de `Color.value` por `toARGB32()` para evitar deprecaciones.
  - Decisión: finalizar navegación automáticamente al detectar llegada usando `remainingDistanceMeters` con umbral de 25 m; se añade `hasArrived` y `endRoute` en `NavigationProvider`.
  - Decisión: añadir botón manual "Finalizar ruta" en `HomePage` para permitir cierre explícito de la navegación.
- - Verificación: prueba unitaria dedicada ejecutada solo sobre el provider para no depender de variables de entorno.
+- Verificación: prueba unitaria dedicada ejecutada solo sobre el provider para no depender de variables de entorno.
+ - Decisión: recortar la polilínea activa en cada actualización de posición para eliminar tramos recorridos; actualización solo cuando avanza el índice para evitar coste innecesario.
+ - Decisión: mejorar suavidad del seguimiento bajando `distanceFilter` a 3 m y el throttle de cámara a 300 ms, manteniendo control de recursos.

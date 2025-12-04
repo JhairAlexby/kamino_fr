@@ -15,4 +15,6 @@
 - Mejora: círculos restaurados y coexistiendo con etiquetas de texto (se crean `CircleAnnotation` y `PointAnnotation` sin ícono por cada lugar). Limpieza de warnings: se elimina `_markerBytes` no usado y se sustituyen colores `.value` por `toARGB32()`.
  - Finalización de rutas: detección automática de llegada con umbral de 25 m y limpieza de polilínea/estado.
  - Botón "Finalizar ruta" en el FAB del mapa, visible solo con ruta activa.
- - Prueba unitaria para `NavigationProvider.hasArrived` y `endRoute` pasando en aislado.
+- Prueba unitaria para `NavigationProvider.hasArrived` y `endRoute` pasando en aislado.
+ - Ruta dinámica: oculto progresivamente los tramos ya recorridos, recortando la polilínea al índice más cercano en tiempo real.
+ - Seguimiento más fluido: reducción de `distanceFilter` a 3 m y throttling de cámara a 300 ms para mejorar suavidad sin comprometer batería.
