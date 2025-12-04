@@ -16,6 +16,8 @@ import 'package:kamino_fr/core/network/http_client.dart';
 import 'package:kamino_fr/features/2_home/data/places_api.dart';
 import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/features/2_home/data/navigation_repository.dart';
+import 'package:kamino_fr/features/2_home/data/recommender_api.dart';
+import 'package:kamino_fr/features/2_home/data/recommender_repository.dart';
 import 'package:kamino_fr/features/4_routes/presentation/pages/my_routes_page.dart';
 import 'package:kamino_fr/features/4_routes/data/routes_api.dart';
 import 'package:kamino_fr/features/4_routes/data/routes_repository.dart';
@@ -359,10 +361,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final placesApi = PlacesApiImpl(http.dio);
     final placesRepo = PlacesRepository(api: placesApi, maxRetries: config.maxRetries);
     final navRepo = NavigationRepository(http.dio, config.mapboxAccessToken);
+    final recommenderApi = RecommenderApiImpl(http.dio);
+    final recommenderRepo = RecommenderRepository(api: recommenderApi, maxRetries: config.maxRetries);
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => HomeProvider()),
+        ChangeNotifierProvider(create: (_) => HomeProvider(recommenderRepository: recommenderRepo)),
         Provider<PlacesRepository>.value(value: placesRepo),
         ChangeNotifierProvider(create: (_) => NearbyPlacesProvider(repository: placesRepo)),
         ChangeNotifierProvider(create: (_) => ExploreProvider(repository: placesRepo)),

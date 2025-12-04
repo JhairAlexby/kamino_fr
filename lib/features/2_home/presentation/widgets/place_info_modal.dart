@@ -43,9 +43,9 @@ class PlaceInfoModal extends StatelessWidget {
               children: [
                 const SizedBox(height: 24),
                 
-                // Imagen del Lugar (Más grande)
+                // Imagen del Lugar (con fallback robusto)
                 Container(
-                  height: 280, // Aumentado el tamaño
+                  height: 280,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
@@ -56,12 +56,26 @@ class PlaceInfoModal extends StatelessWidget {
                         offset: const Offset(0, 8),
                       ),
                     ],
-                    image: DecorationImage(
-                      image: imageUrl != null && imageUrl!.isNotEmpty
-                          ? NetworkImage(imageUrl!) as ImageProvider
-                          : const AssetImage('assets/images/3dmapa.png'),
-                      fit: BoxFit.cover,
-                    ),
+                  ),
+                ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: SizedBox(
+                    height: 280,
+                    width: double.infinity,
+                    child: (imageUrl != null && imageUrl!.isNotEmpty)
+                        ? Image.network(
+                            imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Image.asset(
+                              'assets/images/3dmapa.png',
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Image.asset(
+                            'assets/images/3dmapa.png',
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:kamino_fr/core/app_theme.dart';
+import 'package:provider/provider.dart';
+import 'package:kamino_fr/features/2_home/presentation/provider/home_provider.dart';
+import 'package:kamino_fr/features/2_home/data/models/recommendation.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/recommendation_card.dart';
 
 class HomeCollapsedPanel extends StatelessWidget {
   const HomeCollapsedPanel({super.key});
@@ -40,31 +44,17 @@ class HomeExpandedPanel extends StatelessWidget {
 
   const HomeExpandedPanel({super.key, required this.scrollController});
 
-  Widget _buildCard(String title) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: AppTheme.lightMintBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.primaryMintDark.withOpacity(0.35)),
-      ),
-      child: Align(
-        alignment: Alignment.bottomLeft,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryMint,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textBlack)),
-        ),
-      ),
-    );
+  Widget _buildCard(Recommendation item) {
+    return RecommendationCard(item: item);
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = Provider.of<HomeProvider>(context);
+    final topHidden = vm.hiddenTop;
+    final nonHidden = vm.nonHidden;
+    final topWeek = vm.topWeek;
+
     return ClipRRect(
       borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
       child: Container(
@@ -77,39 +67,58 @@ class HomeExpandedPanel extends StatelessWidget {
           ),
           boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 20, offset: Offset(0, -6))],
         ),
-        child: SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Joyas ocultas de la semana', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(child: _buildCard('Nombre Lugar')),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildCard('Nombre Lugar')),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildCard('Nombre Lugar')),
-                ]),
-                const SizedBox(height: 20),
-                const Text('Basado en tus últimas rutas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
-                const SizedBox(height: 12),
-                _buildCard('Nombre Lugar'),
-                const SizedBox(height: 20),
-                const Text('Destacados de la semana', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(child: _buildCard('Nombre Lugar')),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildCard('Nombre Lugar')),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildCard('Nombre Lugar')),
-                ]),
-                const SizedBox(height: 16),
-              ],
-            ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: ListView(
+            controller: scrollController,
+            children: [
+                if (vm.loadingRecommendations)
+                  const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(color: AppTheme.primaryMint)))
+                else if (vm.recommendationsError != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(vm.recommendationsError!, style: const TextStyle(color: Colors.white)),
+                  )
+                else ...[
+                  const Text('Joyas ocultas de la semana', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 160,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: topHidden.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (_, i) => _buildCard(topHidden[i]),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Basado en tus últimas rutas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
+                  const SizedBox(height: 12),
+                  if (nonHidden.isNotEmpty)
+                    SizedBox(
+                      height: 160,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: nonHidden.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (_, i) => _buildCard(nonHidden[i]),
+                      ),
+                    ),
+                  const SizedBox(height: 20),
+                  const Text('Destacados de la semana', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 160,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: topWeek.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (_, i) => _buildCard(topWeek[i]),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+            ],
           ),
         ),
       ),
