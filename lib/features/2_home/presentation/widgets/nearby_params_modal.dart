@@ -25,7 +25,7 @@ class _NearbyParamsModalState extends State<NearbyParamsModal> {
     super.initState();
     _radiusCtrl = TextEditingController(text: widget.initialRadius.toString());
     _limitCtrl = TextEditingController(text: widget.initialLimit.toString());
-    _useManual = widget.initialUseManual;
+    _useManual = false;
   }
 
   @override
@@ -53,26 +53,6 @@ class _NearbyParamsModalState extends State<NearbyParamsModal> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Usar parámetros manuales',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                Switch(
-                  value: _useManual,
-                  onChanged: (v) {
-                    setState(() {
-                      _useManual = v;
-                    });
-                  },
-                ),
-              ],
-            ),
             AuthInput(
               controller: _radiusCtrl,
               hintText: 'Ingresa radio',

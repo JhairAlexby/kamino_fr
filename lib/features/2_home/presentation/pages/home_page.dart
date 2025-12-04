@@ -46,6 +46,9 @@ import 'package:kamino_fr/features/5_chat/presentation/widgets/chat_bottom_sheet
 import 'package:kamino_fr/features/2_home/data/narrator_api.dart';
 import 'package:kamino_fr/features/2_home/data/narrator_repository.dart';
 import 'package:kamino_fr/core/services/narrator_service.dart';
+import 'package:kamino_fr/features/2_home/data/popularity_api.dart';
+import 'package:kamino_fr/features/2_home/data/popularity_repository.dart';
+import 'package:kamino_fr/features/2_home/presentation/provider/popularity_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -364,6 +367,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final navRepo = NavigationRepository(http.dio, config.mapboxAccessToken);
     final recommenderApi = RecommenderApiImpl(http.dio);
     final recommenderRepo = RecommenderRepository(api: recommenderApi, maxRetries: config.maxRetries);
+    final popularityApi = PopularityApiImpl(http.dio);
+    final popularityRepo = PopularityRepository(api: popularityApi, maxRetries: config.maxRetries);
 
     return MultiProvider(
       providers: [
@@ -372,6 +377,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ChangeNotifierProvider(create: (_) => NearbyPlacesProvider(repository: placesRepo)),
         ChangeNotifierProvider(create: (_) => ExploreProvider(repository: placesRepo)),
         ChangeNotifierProvider(create: (_) => NavigationProvider(navRepo)),
+        ChangeNotifierProvider(create: (_) => PopularityProvider(repository: popularityRepo)),
       ],
       child: Consumer2<HomeProvider, NavigationProvider>(
         builder: (context, vm, navVm, child) {
@@ -463,6 +469,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     );
                                   });
                                   await _onCameraChanged(context);
+                                  try {
+                                    final popVm = Provider.of<PopularityProvider>(context, listen: false);
+                                    await popVm.loadRanking();
+                                  } catch (_) {}
                                 }
                               },
                             ),
@@ -473,7 +483,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             child: HomeFloatingButtons(
                               onHideTooltip: _hideTooltip,
                               onCenterCamera: () => _centerCameraOnUser(),
-                              onCameraChanged: (ctx) => _onCameraChanged(ctx),
                             ),
                           ),
                           RouteGenerationOverlay(isVisible: navVm.isGeneratingRouteOverlay),

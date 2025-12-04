@@ -14,6 +14,8 @@ import 'package:kamino_fr/features/2_home/data/narrator_api.dart';
 import 'package:kamino_fr/features/2_home/data/narrator_repository.dart';
 import 'package:kamino_fr/core/services/narrator_service.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:kamino_fr/features/2_home/presentation/provider/popularity_provider.dart';
+import 'package:kamino_fr/features/2_home/presentation/widgets/popularity_list_item.dart';
 
 class HomeCollapsedPanel extends StatelessWidget {
   const HomeCollapsedPanel({super.key});
@@ -102,6 +104,7 @@ class HomeExpandedPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = Provider.of<HomeProvider>(context);
+    final pop = Provider.of<PopularityProvider>(context);
     final items = [...vm.recommendations]..sort((a, b) => b.finalScore.compareTo(a.finalScore));
 
     return ClipRRect(
@@ -140,6 +143,54 @@ class HomeExpandedPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                 ],
+                const Text('Ranking de lugares populares', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryMint)),
+                const SizedBox(height: 12),
+                if (pop.loading)
+                  const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(color: AppTheme.primaryMint)))
+                else if (pop.error != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(pop.error!, style: const TextStyle(color: Colors.white)),
+                  )
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: pop.top.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (ctx, i) {
+                      final r = pop.top[i];
+                      return PopularityListItem(
+                        item: r,
+                        index: i,
+                        onTap: () async {
+                          try {
+                            final repo = Provider.of<PlacesRepository>(ctx, listen: false);
+                            final navVm = Provider.of<NavigationProvider>(ctx, listen: false);
+                            final homeVm = Provider.of<HomeProvider>(ctx, listen: false);
+                            final place = await repo.getById(r.placeId);
+                            if (place == null) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Lugar no disponible')));
+                              return;
+                            }
+                            final pos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+                            homeVm.setTab(0);
+                            try { panelController.close(); } catch (_) {}
+                            await navVm.calculateRoute(
+                              latOrigin: pos.latitude,
+                              lonOrigin: pos.longitude,
+                              latDest: place.latitude,
+                              lonDest: place.longitude,
+                              currentSpeed: pos.speed,
+                              destinationName: place.name,
+                            );
+                          } catch (_) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('No se pudo iniciar la navegación')));
+                          }
+                        },
+                      );
+                    },
+                  ),
             ],
           ),
         ),
