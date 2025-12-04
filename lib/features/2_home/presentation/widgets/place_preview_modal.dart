@@ -24,6 +24,19 @@ class _PlacePreviewModalState extends State<PlacePreviewModal> with SingleTicker
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
+  String _translateDay(String day) {
+    const map = {
+      'monday': 'Lunes',
+      'tuesday': 'Martes',
+      'wednesday': 'Miércoles',
+      'thursday': 'Jueves',
+      'friday': 'Viernes',
+      'saturday': 'Sábado',
+      'sunday': 'Domingo',
+    };
+    return map[day.toLowerCase()] ?? day;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -253,7 +266,7 @@ class _PlacePreviewModalState extends State<PlacePreviewModal> with SingleTicker
                         SizedBox(
                           width: 90,
                           child: Text(
-                            e.key,
+                            _translateDay(e.key),
                             style: const TextStyle(fontSize: 12, color: Colors.white70),
                           ),
                         ),
@@ -274,7 +287,7 @@ class _PlacePreviewModalState extends State<PlacePreviewModal> with SingleTicker
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    widget.place.closedDays.join(', '),
+                    widget.place.closedDays.map((d) => _translateDay(d)).join(', '),
                     style: const TextStyle(fontSize: 12, color: Colors.white70),
                   ),
                 ),
@@ -305,7 +318,7 @@ class _PlacePreviewModalState extends State<PlacePreviewModal> with SingleTicker
                                       color: Colors.white.withOpacity(0.08),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Text(d, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                    child: Text(_translateDay(d), style: const TextStyle(fontSize: 12, color: Colors.white)),
                                   ))
                               .toList(),
                         ),
@@ -328,7 +341,7 @@ class _PlacePreviewModalState extends State<PlacePreviewModal> with SingleTicker
                                       color: Colors.white.withOpacity(0.08),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Text(d, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                    child: Text(_translateDay(d), style: const TextStyle(fontSize: 12, color: Colors.white)),
                                   ))
                               .toList(),
                         ),
