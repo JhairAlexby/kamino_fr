@@ -16,5 +16,13 @@ class ProfileRepository {
   Future<void> updateTags(List<String> tags) async {
     await api.updateTags(tags);
   }
+
+  Future<void> addFavorite(String placeId) async {
+    await api.addFavorite(placeId);
+  }
+
+  Future<void> removeFavorite(String placeId) async {
+    await api.removeFavorite(placeId);
+  }
 }
 

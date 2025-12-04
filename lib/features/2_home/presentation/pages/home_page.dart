@@ -18,6 +18,7 @@ import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/features/2_home/data/navigation_repository.dart';
 import 'package:kamino_fr/features/4_routes/presentation/pages/my_routes_page.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/nearby_places_provider.dart';
+import 'package:kamino_fr/features/5_explore/presentation/provider/explore_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/navigation_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/map/places_layers.dart';
 import 'package:kamino_fr/features/2_home/data/models/place.dart';
@@ -30,6 +31,7 @@ import 'package:kamino_fr/features/2_home/presentation/widgets/route_generation_
 import 'package:kamino_fr/features/2_home/presentation/widgets/destination_confirmation_dialog.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/home_sliding_panel.dart';
 import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
+import 'package:kamino_fr/features/5_explore/presentation/pages/explore_page.dart';
 import 'package:kamino_fr/core/utils/app_animations.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import '../widgets/place_info_modal.dart'; // Usamos el existente
@@ -216,32 +218,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   // Nuevos métodos para manejar las acciones del modal
-  Future<void> _handlePlaceSelection(Place place, BuildContext ctx) async {
-    _hideTooltip();
-    final lat = place.latitude;
-    final lon = place.longitude;
-    
-    final navVm = Provider.of<NavigationProvider>(ctx, listen: false);
-    final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
-    _userSpeed = geoPos.speed;
-    
-    Navigator.of(ctx).pop(); // Cerrar el modal
-    
-    await navVm.calculateRoute(
-      latOrigin: geoPos.latitude, 
-      lonOrigin: geoPos.longitude, 
-      latDest: lat, 
-      lonDest: lon, 
-      currentSpeed: _userSpeed,
-      showOverlay: false,
-      destinationName: place.name, // Nombre del destino para la UI
-    );
-    if (navVm.routeCoords.isNotEmpty) {
-      await _fitCameraToRoute(navVm.routeCoords);
-      await _drawRoute(navVm.routeCoords);
-    }
-  }
-
   Future<void> _handlePlaceSelectionWithNav(NavigationProvider navVm, Place place, BuildContext ctx) async {
     _hideTooltip();
     final lat = place.latitude;
@@ -361,6 +337,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       providers: [
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => NearbyPlacesProvider(repository: placesRepo)),
+        ChangeNotifierProvider(create: (_) => ExploreProvider(repository: placesRepo)),
         ChangeNotifierProvider(create: (_) => NavigationProvider(navRepo)),
       ],
       child: Consumer2<HomeProvider, NavigationProvider>(
@@ -481,11 +458,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         child: child,
                       ),
                     ),
-                    child: vm.currentTab == 2
+                    child: vm.currentTab == 3
                         ? const ProfilePage(key: ValueKey('profile'))
-                        : vm.currentTab == 1
+                        : vm.currentTab == 2
                             ? const MyRoutesPage(key: ValueKey('my_routes'))
-                            : const SizedBox.shrink(),
+                            : vm.currentTab == 1
+                                ? const ExplorePage(key: ValueKey('explore'))
+                                : const SizedBox.shrink(),
                   ),
                 ],
               ),
@@ -683,6 +662,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         },
                         destinations: const [
                           NavigationDestination(icon: Icon(Icons.home), selectedIcon: Icon(Icons.home), label: 'Inicio'),
+                          NavigationDestination(icon: Icon(Icons.search), selectedIcon: Icon(Icons.search), label: 'Explorar'),
                           NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Mis Rutas'),
                           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Perfil'),
                         ],

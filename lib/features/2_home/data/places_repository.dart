@@ -51,6 +51,42 @@ class PlacesRepository {
     }
   }
 
+  // REMOVED DUPLICATE findAll METHOD HERE
+
+  Future<List<Place>> findAll({
+    String? search,
+    String? category,
+    List<String>? tags,
+    double? latitude,
+    double? longitude,
+    double? radius,
+    bool? isHiddenGem,
+    String? sortBy,
+    String? sortOrder,
+  }) async {
+    int attempt = 0;
+    while (true) {
+      try {
+        final items = await api.findAll(
+          search: search,
+          category: category,
+          tags: tags,
+          latitude: latitude,
+          longitude: longitude,
+          radius: radius,
+          isHiddenGem: isHiddenGem,
+          sortBy: sortBy,
+          sortOrder: sortOrder,
+        );
+        return _dedup(items);
+      } catch (e) {
+        attempt++;
+        if (attempt > maxRetries) rethrow;
+        await Future.delayed(Duration(milliseconds: 200 * attempt * attempt));
+      }
+    }
+  }
+
   List<Place> _dedup(List<Place> input) {
     final seen = <String>{};
     final out = <Place>[];

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:kamino_fr/core/app_theme.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/mint_dialog_shell.dart';
 
 class LogDetailsModal extends StatelessWidget {

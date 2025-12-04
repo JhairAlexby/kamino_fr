@@ -8,6 +8,18 @@ abstract class PlacesApi {
     required double radius,
     int limit = 100,
   });
+
+  Future<List<Place>> findAll({
+    String? search,
+    String? category,
+    List<String>? tags,
+    double? latitude,
+    double? longitude,
+    double? radius,
+    bool? isHiddenGem,
+    String? sortBy,
+    String? sortOrder,
+  });
 }
 
 class PlacesApiImpl implements PlacesApi {
@@ -21,7 +33,43 @@ class PlacesApiImpl implements PlacesApi {
     required double radius,
     int limit = 100,
   }) async {
-    final res = await _dio.get('/api/v1/places');
+    final res = await _dio.post(
+      '/api/v1/places/nearby',
+      data: {
+        'latitude': latitude,
+        'longitude': longitude,
+        'radius': radius,
+        'limit': limit,
+      },
+    );
+    final list = (res.data as List?) ?? const [];
+    return list.map((e) => Place.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  @override
+  Future<List<Place>> findAll({
+    String? search,
+    String? category,
+    List<String>? tags,
+    double? latitude,
+    double? longitude,
+    double? radius,
+    bool? isHiddenGem,
+    String? sortBy,
+    String? sortOrder,
+  }) async {
+    final query = <String, dynamic>{};
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    if (category != null && category.isNotEmpty) query['category'] = category;
+    if (tags != null && tags.isNotEmpty) query['tags'] = tags.join(',');
+    if (latitude != null) query['latitude'] = latitude;
+    if (longitude != null) query['longitude'] = longitude;
+    if (radius != null) query['radius'] = radius;
+    if (isHiddenGem != null) query['isHiddenGem'] = isHiddenGem;
+    if (sortBy != null) query['sortBy'] = sortBy;
+    if (sortOrder != null) query['sortOrder'] = sortOrder;
+
+    final res = await _dio.get('/api/v1/places', queryParameters: query);
     final map = res.data as Map<String, dynamic>;
     final list = (map['data'] as List?) ?? const [];
     return list.map((e) => Place.fromJson(e as Map<String, dynamic>)).toList();

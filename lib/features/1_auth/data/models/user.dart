@@ -9,6 +9,7 @@ class User {
   final DateTime updatedAt;
   final String? gender;
   final List<String> preferredTags;
+  final List<String> favoritePlaces;
 
   User({
     required this.id,
@@ -21,7 +22,37 @@ class User {
     required this.updatedAt,
     this.gender,
     List<String>? preferredTags,
-  }) : preferredTags = preferredTags ?? const [];
+    List<String>? favoritePlaces,
+  }) : preferredTags = preferredTags ?? const [],
+       favoritePlaces = favoritePlaces ?? const [];
+
+  User copyWith({
+    String? id,
+    String? email,
+    String? firstName,
+    String? lastName,
+    String? role,
+    bool? isActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? gender,
+    List<String>? preferredTags,
+    List<String>? favoritePlaces,
+  }) {
+    return User(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      role: role ?? this.role,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      gender: gender ?? this.gender,
+      preferredTags: preferredTags ?? this.preferredTags,
+      favoritePlaces: favoritePlaces ?? this.favoritePlaces,
+    );
+  }
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -35,6 +66,7 @@ class User {
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       gender: json['gender'] as String?,
       preferredTags: (json['preferredTags'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+      favoritePlaces: (json['favoritePlaces'] as List?)?.map((e) => e.toString()).toList() ?? const [],
     );
   }
 }
