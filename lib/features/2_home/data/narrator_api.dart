@@ -19,8 +19,23 @@ class NarratorApiImpl implements NarratorApi {
 
   @override
   Future<String?> getText(String placeId) async {
-    final res = await _dio.get('/api/v1/narrator/$placeId');
-    final data = res.data as Map<String, dynamic>;
-    return parseNarratorText(data);
+    try {
+      final res = await _dio.get(
+        '/api/v1/narrator/$placeId',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 12),
+          sendTimeout: const Duration(seconds: 12),
+        ),
+      );
+      final raw = res.data;
+      if (raw is Map<String, dynamic>) {
+        final ok = raw['success'] == true && (raw['statusCode'] == 200 || res.statusCode == 200);
+        if (!ok) return null;
+        return parseNarratorText(raw);
+      }
+      return null;
+    } on DioException {
+      return null;
+    }
   }
 }

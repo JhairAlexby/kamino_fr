@@ -4,7 +4,8 @@
     <application
         android:label="Kamino"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -45,6 +46,9 @@
         </intent>
         <intent>
             <action android:name="android.speech.tts.engine.TTS_SERVICE"/>
+        </intent>
+        <intent>
+            <action android:name="android.speech.tts.TextToSpeechService"/>
         </intent>
     </queries>
 </manifest>
