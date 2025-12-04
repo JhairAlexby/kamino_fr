@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 import 'package:kamino_fr/features/2_home/data/models/place.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'package:kamino_fr/core/utils/geo_utils.dart';
 
 class PlacePreviewModal extends StatefulWidget {
   final Place place;
@@ -25,6 +27,7 @@ class PlacePreviewModal extends StatefulWidget {
 class _PlacePreviewModalState extends State<PlacePreviewModal> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  String _distanceText = '';
 
   String _translateDay(String day) {
     const map = {
@@ -49,12 +52,36 @@ class _PlacePreviewModalState extends State<PlacePreviewModal> with SingleTicker
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
+    _computeDistance();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _computeDistance() async {
+    try {
+      final pos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+      final meters = GeoUtils.haversineMeters(
+        pos.latitude,
+        pos.longitude,
+        widget.place.latitude,
+        widget.place.longitude,
+      );
+      setState(() {
+        _distanceText = meters >= 1000
+            ? '${(meters / 1000).toStringAsFixed(1)} km'
+            : '${meters.round()} m';
+      });
+    } catch (_) {
+      setState(() {
+        _distanceText = widget.place.distance > 0
+            ? '${widget.place.distance.toStringAsFixed(1)} km'
+            : '';
+      });
+    }
   }
 
   @override
@@ -207,13 +234,13 @@ class _PlacePreviewModalState extends State<PlacePreviewModal> with SingleTicker
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    if (widget.place.distance > 0)
+                    if (_distanceText.isNotEmpty)
                       Row(
                         children: [
                           const Icon(Icons.location_on, size: 16, color: Colors.white70),
                           const SizedBox(width: 4),
                           Text(
-                            '${widget.place.distance.toStringAsFixed(1)} km',
+                            _distanceText,
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.white70,
