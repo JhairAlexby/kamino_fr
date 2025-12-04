@@ -150,9 +150,13 @@ class ProfileProvider extends ChangeNotifier {
   }
 
   Future<void> toggleVisited(String placeId) async {
-    if (user == null) return;
+    if (user == null) {
+      print('ProfileProvider: user is null, cannot toggle visited');
+      return;
+    }
 
     final isCurrentlyVisited = isVisited(placeId);
+    print('ProfileProvider: toggling visited for $placeId. Current status: $isCurrentlyVisited');
     final currentVisited = List<String>.from(user!.visitedPlaces);
 
     // Optimistic update
@@ -168,10 +172,13 @@ class ProfileProvider extends ChangeNotifier {
     try {
       if (isCurrentlyVisited) {
         await repo.removeVisited(placeId);
+        print('ProfileProvider: successfully removed visited $placeId from backend');
       } else {
         await repo.addVisited(placeId);
+        print('ProfileProvider: successfully added visited $placeId to backend');
       }
     } catch (e) {
+      print('ProfileProvider: error toggling visited: $e');
       // Revert on error
       final revertedVisited = List<String>.from(user!.visitedPlaces);
       if (isCurrentlyVisited) {

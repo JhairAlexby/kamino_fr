@@ -27,6 +27,11 @@ class _FakePlacesApi implements PlacesApi {
   }) async {
     return const [];
   }
+
+  @override
+  Future<Place?> getById(String id) async {
+    return null;
+  }
 }
 
 void main() {

@@ -88,14 +88,21 @@ class PlacesApiImpl implements PlacesApi {
 
   @override
   Future<Place?> getById(String id) async {
-    final res = await _dio.get('/api/v1/places/$id');
-    final raw = res.data;
-    if (raw is Map<String, dynamic>) {
-      final data = raw['data'];
+    try {
+      print('PlacesApi: fetching place $id');
+      final res = await _dio.get('/api/v1/places/$id');
+      final data = res.data;
+      print('PlacesApi: response for $id: $data');
       if (data is Map<String, dynamic>) {
+        if (data.containsKey('data')) {
+           return Place.fromJson(data['data'] as Map<String, dynamic>);
+        }
         return Place.fromJson(data);
       }
+      return null;
+    } catch (e) {
+      print('PlacesApi: error fetching place $id: $e');
+      return null;
     }
-    return null;
   }
 }

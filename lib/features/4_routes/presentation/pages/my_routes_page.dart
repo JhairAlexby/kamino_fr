@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
+import 'package:kamino_fr/features/2_home/data/models/place.dart';
+import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/core/app_theme.dart';
 
 class MyRoutesPage extends StatefulWidget {
@@ -10,57 +12,205 @@ class MyRoutesPage extends StatefulWidget {
   State<MyRoutesPage> createState() => _MyRoutesPageState();
 }
 
-class _MyRoutesPageState extends State<MyRoutesPage> {
+class _MyRoutesPageState extends State<MyRoutesPage> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  List<Place> _visitedPlacesList = [];
+  List<Place> _favoritePlacesList = [];
+  bool _isLoadingVisited = false;
+  bool _isLoadingFavorites = false;
+  Set<String> _loadedVisitedIds = {};
+  Set<String> _loadedFavoriteIds = {};
+  String? _visitedError;
+  String? _favoritesError;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final profileProvider = context.read<ProfileProvider>();
       if (profileProvider.user == null && !profileProvider.isLoading) {
-        profileProvider.loadProfile();
+        profileProvider.loadProfile().then((_) {
+          _loadVisitedPlaces();
+          _loadFavoritePlaces();
+        });
+      } else {
+        _loadVisitedPlaces();
+        _loadFavoritePlaces();
       }
     });
   }
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadVisitedPlaces() async {
+    final profileProvider = context.read<ProfileProvider>();
+    final visitedIds = profileProvider.user?.visitedPlaces ?? [];
+    
+    print('MyRoutesPage: loading visited places. IDs: $visitedIds');
+
+    if (visitedIds.isEmpty) {
+      print('MyRoutesPage: no visited places to load.');
+      if (mounted) {
+        setState(() {
+          _visitedPlacesList = [];
+          _loadedVisitedIds = {};
+        });
+      }
+      return;
+    }
+
+    if (visitedIds.toSet().difference(_loadedVisitedIds).isEmpty && 
+        _loadedVisitedIds.difference(visitedIds.toSet()).isEmpty && 
+        _visitedPlacesList.isNotEmpty) {
+      print('MyRoutesPage: visited places already loaded and up to date.');
+      return;
+    }
+
+    if (mounted) setState(() => _isLoadingVisited = true);
+
+    try {
+      final placesRepo = context.read<PlacesRepository>();
+      final List<Place> loaded = [];
+      
+      for (final id in visitedIds) {
+        try {
+          print('MyRoutesPage: fetching details for visited place $id');
+          final place = await placesRepo.getById(id);
+          if (place != null) {
+            print('MyRoutesPage: loaded visited details for ${place.name}');
+            loaded.add(place);
+          } else {
+            print('MyRoutesPage: failed to load visited details for $id (returned null)');
+          }
+        } catch (e) {
+          print('MyRoutesPage: error loading visited place $id: $e');
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _visitedPlacesList = loaded;
+          _loadedVisitedIds = visitedIds.toSet();
+          _isLoadingVisited = false;
+          if (loaded.isEmpty && visitedIds.isNotEmpty) {
+            _visitedError = 'No se pudieron cargar los lugares. Verifica tu conexión.';
+          } else {
+            _visitedError = null;
+          }
+        });
+      }
+    } catch (e) {
+      print('MyRoutesPage: error loading visited places: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingVisited = false;
+          _visitedError = 'Error al cargar: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _loadFavoritePlaces() async {
+    final profileProvider = context.read<ProfileProvider>();
+    final favoriteIds = profileProvider.user?.favoritePlaces ?? [];
+    
+    print('MyRoutesPage: loading favorite places. IDs: $favoriteIds');
+
+    if (favoriteIds.isEmpty) {
+      print('MyRoutesPage: no favorite places to load.');
+      if (mounted) {
+        setState(() {
+          _favoritePlacesList = [];
+          _loadedFavoriteIds = {};
+        });
+      }
+      return;
+    }
+
+    if (favoriteIds.toSet().difference(_loadedFavoriteIds).isEmpty && 
+        _loadedFavoriteIds.difference(favoriteIds.toSet()).isEmpty && 
+        _favoritePlacesList.isNotEmpty) {
+      print('MyRoutesPage: favorite places already loaded and up to date.');
+      return;
+    }
+
+    if (mounted) setState(() => _isLoadingFavorites = true);
+
+    try {
+      final placesRepo = context.read<PlacesRepository>();
+      final List<Place> loaded = [];
+      
+      for (final id in favoriteIds) {
+        try {
+          print('MyRoutesPage: fetching details for favorite place $id');
+          final place = await placesRepo.getById(id);
+          if (place != null) {
+            print('MyRoutesPage: loaded favorite details for ${place.name}');
+            loaded.add(place);
+          } else {
+            print('MyRoutesPage: failed to load favorite details for $id (returned null)');
+          }
+        } catch (e) {
+          print('MyRoutesPage: error loading favorite place $id: $e');
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _favoritePlacesList = loaded;
+          _loadedFavoriteIds = favoriteIds.toSet();
+          _isLoadingFavorites = false;
+          if (loaded.isEmpty && favoriteIds.isNotEmpty) {
+            _favoritesError = 'No se pudieron cargar los lugares. Verifica tu conexión.';
+          } else {
+            _favoritesError = null;
+          }
+        });
+      }
+    } catch (e) {
+      print('MyRoutesPage: error loading favorite places: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingFavorites = false;
+          _favoritesError = 'Error al cargar: $e';
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Datos simulados de rutas/lugares visitados
-    final visitedPlaces = [
-      {
-        'id': 'mock-parque-central',
-        'name': 'Parque Central',
-        'date': '02/12/2023',
-        'image': 'assets/images/3dmapa.png',
-        'distance': '2.5 km',
-        'hasLog': true, // Simulación: ya tiene bitácora
-      },
-      {
-        'id': 'mock-museo-arte',
-        'name': 'Museo de Arte Moderno',
-        'date': '28/11/2023',
-        'image': 'assets/images/3dmapa.png',
-        'distance': '5.1 km',
-        'hasLog': false, // Simulación: no tiene bitácora
-      },
-      {
-        'id': 'mock-jardin-botanico',
-        'name': 'Jardín Botánico',
-        'date': '15/11/2023',
-        'image': 'assets/images/3dmapa.png',
-        'distance': '3.2 km',
-        'hasLog': false,
-      },
-    ];
+    final profileProvider = context.watch<ProfileProvider>();
+    
+    // Check for updates on every build
+    final currentVisitedIds = profileProvider.user?.visitedPlaces ?? [];
+    if (!_isLoadingVisited && 
+        (currentVisitedIds.length != _loadedVisitedIds.length || 
+         !currentVisitedIds.toSet().containsAll(_loadedVisitedIds))) {
+       WidgetsBinding.instance.addPostFrameCallback((_) => _loadVisitedPlaces());
+    }
+
+    final currentFavoriteIds = profileProvider.user?.favoritePlaces ?? [];
+    if (!_isLoadingFavorites && 
+        (currentFavoriteIds.length != _loadedFavoriteIds.length || 
+         !currentFavoriteIds.toSet().containsAll(_loadedFavoriteIds))) {
+       WidgetsBinding.instance.addPostFrameCallback((_) => _loadFavoritePlaces());
+    }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF181A20), // AppTheme.textBlack
+      backgroundColor: const Color(0xFF181A20),
       body: SafeArea(
         bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Padding(
-              padding: EdgeInsets.fromLTRB(24, 24, 24, 16),
+              padding: EdgeInsets.fromLTRB(24, 24, 24, 0),
               child: Text(
                 'Mis Rutas',
                 style: TextStyle(
@@ -70,45 +220,126 @@ class _MyRoutesPageState extends State<MyRoutesPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            TabBar(
+              controller: _tabController,
+              indicatorColor: AppTheme.primaryMint,
+              labelColor: AppTheme.primaryMint,
+              unselectedLabelColor: Colors.white60,
+              dividerColor: Colors.transparent,
+              tabs: const [
+                Tab(text: 'Visitados'),
+                Tab(text: 'Favoritos'),
+              ],
+            ),
             Expanded(
-              child: visitedPlaces.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.map_outlined, size: 64, color: Colors.white.withOpacity(0.3)),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Aún no has realizado ninguna ruta',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                      itemCount: visitedPlaces.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final place = visitedPlaces[index];
-                        final hasLog = place['hasLog'] as bool;
-
-                        return _RouteCard(place: place, hasLog: hasLog);
-                      },
-                    ),
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // Tab 1: Visitados
+                  _buildPlaceList(
+                    isLoading: _isLoadingVisited,
+                    places: _visitedPlacesList,
+                    emptyMessage: 'Aún no has visitado ningún lugar',
+                    emptyIcon: Icons.check_circle_outline,
+                    errorMessage: _visitedError,
+                    onRetry: _loadVisitedPlaces,
+                  ),
+                  // Tab 2: Favoritos
+                  _buildPlaceList(
+                    isLoading: _isLoadingFavorites,
+                    places: _favoritePlacesList,
+                    emptyMessage: 'Aún no tienes lugares favoritos',
+                    emptyIcon: Icons.favorite_border,
+                    errorMessage: _favoritesError,
+                    onRetry: _loadFavoritePlaces,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildPlaceList({
+    required bool isLoading,
+    required List<Place> places,
+    required String emptyMessage,
+    required IconData emptyIcon,
+    String? errorMessage,
+    VoidCallback? onRetry,
+  }) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
+    }
+    
+    if (places.isEmpty) {
+      if (errorMessage != null) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, size: 48, color: Colors.orangeAccent),
+                const SizedBox(height: 16),
+                Text(
+                  errorMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70, fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Reintentar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryMint,
+                    foregroundColor: AppTheme.textBlack,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(emptyIcon, size: 64, color: Colors.white.withOpacity(0.3)),
+            const SizedBox(height: 16),
+            Text(
+              emptyMessage,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+      itemCount: places.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final place = places[index];
+        final hasLog = false; // TODO: Implement log logic
+
+        return _RouteCard(place: place, hasLog: hasLog);
+      },
+    );
+  }
 }
 
 class _RouteCard extends StatefulWidget {
-  final Map<String, Object> place;
+  final Place place;
   final bool hasLog;
 
   const _RouteCard({required this.place, required this.hasLog});
@@ -176,11 +407,17 @@ class _RouteCardState extends State<_RouteCard> with SingleTickerProviderStateMi
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  widget.place['image'] as String,
+                child: Image.network(
+                  widget.place.imageUrl,
                   width: 90,
                   height: 90,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 90,
+                    height: 90,
+                    color: Colors.grey[800],
+                    child: const Icon(Icons.image_not_supported, color: Colors.white),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -193,7 +430,7 @@ class _RouteCardState extends State<_RouteCard> with SingleTickerProviderStateMi
                       children: [
                         Expanded(
                           child: Text(
-                            widget.place['name'] as String,
+                            widget.place.name,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -205,15 +442,14 @@ class _RouteCardState extends State<_RouteCard> with SingleTickerProviderStateMi
                         ),
                         Consumer<ProfileProvider>(
                           builder: (context, profile, _) {
-                            final placeId = widget.place['id'] as String;
-                            final isLiked = profile.isLiked(placeId);
+                            final isLiked = profile.isLiked(widget.place.id);
                             return InkWell(
-                              onTap: () => profile.toggleFavorite(placeId),
+                              onTap: () => profile.toggleFavorite(widget.place.id),
                               child: Padding(
                                 padding: const EdgeInsets.only(left: 8.0),
                                 child: Icon(
                                   isLiked ? Icons.favorite : Icons.favorite_border,
-                                  color: isLiked ? Colors.red : Colors.white54,
+                                  color: isLiked ? const Color(0xFFFF4757) : Colors.white54,
                                   size: 20,
                                 ),
                               ),
@@ -225,24 +461,17 @@ class _RouteCardState extends State<_RouteCard> with SingleTickerProviderStateMi
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.calendar_today, size: 12, color: Colors.white.withOpacity(0.6)),
+                        Icon(Icons.location_on, size: 12, color: Colors.white.withOpacity(0.6)),
                         const SizedBox(width: 4),
-                        Text(
-                          widget.place['date'] as String,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withOpacity(0.6),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.straighten, size: 12, color: AppTheme.primaryMint),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.place['distance'] as String,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.primaryMint,
-                            fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Text(
+                            widget.place.address,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white.withOpacity(0.6),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
