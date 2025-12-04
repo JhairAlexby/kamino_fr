@@ -5,7 +5,8 @@ import 'package:kamino_fr/features/4_routes/data/models/generated_routes_respons
 
 class GeneratedRoutesModal extends StatelessWidget {
   final GenerateRoutesResponse response;
-  const GeneratedRoutesModal({super.key, required this.response});
+  final void Function(GeneratedRoute route) onStartRoute;
+  const GeneratedRoutesModal({super.key, required this.response, required this.onStartRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +102,7 @@ class GeneratedRoutesModal extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () { onStartRoute(route); },
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 44),
                           backgroundColor: AppTheme.primaryMint,
@@ -121,4 +122,3 @@ class GeneratedRoutesModal extends StatelessWidget {
     );
   }
 }
-

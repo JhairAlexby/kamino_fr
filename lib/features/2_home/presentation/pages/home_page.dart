@@ -551,7 +551,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   );
                                   await AppAnimations.showFluidDialog<void>(
                                     context: context,
-                                    builder: (_) => GeneratedRoutesModal(response: result),
+                                    builder: (ctx) => GeneratedRoutesModal(
+                                      response: result,
+                                      onStartRoute: (route) async {
+                                        if (route.places.isEmpty) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Ruta sin lugares')),
+                                          );
+                                          return;
+                                        }
+                                        final first = route.places.first;
+                                        final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
+                                        final navVmLocal = Provider.of<NavigationProvider>(context, listen: false);
+                                        final homeVm = Provider.of<HomeProvider>(context, listen: false);
+                                        homeVm.setTab(0);
+                                        Navigator.of(ctx).pop();
+                                        await navVmLocal.calculateRoute(
+                                          latOrigin: geoPos.latitude,
+                                          lonOrigin: geoPos.longitude,
+                                          latDest: first.latitude,
+                                          lonDest: first.longitude,
+                                          currentSpeed: geoPos.speed,
+                                          destinationName: first.name,
+                                        );
+                                      },
+                                    ),
                                   );
                                 } catch (_) {
                                   if (mounted) {
