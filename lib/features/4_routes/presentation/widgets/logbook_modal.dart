@@ -25,13 +25,15 @@ class LogbookModal extends StatefulWidget {
 class _LogbookModalState extends State<LogbookModal> {
   late TextEditingController _notesController;
   DateTime _selectedDate = DateTime.now();
+  int _rating = 5; // Default rating
 
   @override
   void initState() {
     super.initState();
     _notesController = TextEditingController(text: widget.existingLog?.notes ?? '');
     if (widget.existingLog != null) {
-      _selectedDate = widget.existingLog!.date;
+      _selectedDate = widget.existingLog!.visitDate;
+      _rating = widget.existingLog!.rating;
     }
   }
 
@@ -112,6 +114,22 @@ class _LogbookModalState extends State<LogbookModal> {
             ),
           ),
           const SizedBox(height: 24),
+          // Rating Selector
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              return IconButton(
+                onPressed: () => setState(() => _rating = index + 1),
+                icon: Icon(
+                  index < _rating ? Icons.star : Icons.star_border,
+                  color: Colors.amber,
+                  size: 32,
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 16),
+          // Date Picker
           InkWell(
             onTap: _pickDate,
             borderRadius: BorderRadius.circular(12),
@@ -168,11 +186,12 @@ class _LogbookModalState extends State<LogbookModal> {
                 if (_notesController.text.isEmpty) return;
                 
                 final log = LogbookEntry(
-                  id: widget.existingLog?.id ?? DateTime.now().toIso8601String(),
+                  id: widget.existingLog?.id, // ID is null for new logs
                   placeId: widget.placeId,
                   placeName: widget.placeName,
                   placeImageUrl: widget.placeImageUrl,
-                  date: _selectedDate,
+                  visitDate: _selectedDate,
+                  rating: _rating,
                   notes: _notesController.text,
                 );
                 widget.onSave(log);

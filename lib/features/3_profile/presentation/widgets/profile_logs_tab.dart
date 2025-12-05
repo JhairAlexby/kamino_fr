@@ -91,9 +91,9 @@ class _LogCardState extends State<_LogCard> with SingleTickerProviderStateMixin 
           context: context,
           barrierColor: Colors.black.withOpacity(0.8),
           builder: (context) => LogDetailsModal(log: {
-            'placeName': widget.log.placeName,
-            'date': '${widget.log.date.day}/${widget.log.date.month}/${widget.log.date.year}',
-            'image': widget.log.placeImageUrl,
+            'placeName': widget.log.placeName ?? 'Lugar desconocido',
+            'date': '${widget.log.visitDate.day}/${widget.log.visitDate.month}/${widget.log.visitDate.year}',
+            'image': widget.log.placeImageUrl ?? '',
             'excerpt': widget.log.notes,
           }),
         );
@@ -128,7 +128,7 @@ class _LogCardState extends State<_LogCard> with SingleTickerProviderStateMixin 
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.network(
-                  widget.log.placeImageUrl,
+                  widget.log.placeImageUrl ?? '',
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
@@ -146,7 +146,7 @@ class _LogCardState extends State<_LogCard> with SingleTickerProviderStateMixin 
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.log.placeName,
+                      widget.log.placeName ?? 'Lugar desconocido',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -161,10 +161,21 @@ class _LogCardState extends State<_LogCard> with SingleTickerProviderStateMixin 
                         Icon(Icons.calendar_today, size: 12, color: Colors.white.withOpacity(0.6)),
                         const SizedBox(width: 4),
                         Text(
-                          '${widget.log.date.day}/${widget.log.date.month}/${widget.log.date.year}',
+                          '${widget.log.visitDate.day}/${widget.log.visitDate.month}/${widget.log.visitDate.year}',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withOpacity(0.6),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.star, size: 12, color: Colors.amber),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${widget.log.rating}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.amber,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
