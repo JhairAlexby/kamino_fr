@@ -12,85 +12,172 @@ class RecommendationListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.lightMintBackground,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.primaryMintDark.withOpacity(0.35)),
+          color: const Color(0xFF1E2329),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: Colors.white.withOpacity(0.05),
+            width: 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryMint.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.place_outlined, color: AppTheme.primaryMint, size: 24),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    item.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textBlack, fontSize: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          Text(
+                            item.category,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withOpacity(0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (item.isHiddenGem)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.amber.withOpacity(0.5)),
+                              ),
+                              child: const Text(
+                                'Gema Oculta',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.amber,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                if (item.isHiddenGem)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-                    child: const Text('Gema oculta', style: TextStyle(color: AppTheme.textBlack, fontWeight: FontWeight.w700, fontSize: 10)),
-                  ),
               ],
             ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: AppTheme.primaryMint.withOpacity(0.14), borderRadius: BorderRadius.circular(8)),
-              child: Text(
-                item.category,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, color: AppTheme.primaryMint, fontWeight: FontWeight.w600),
-              ),
-            ),
             if (item.reason.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                item.reason,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, color: AppTheme.textBlack),
-              ),
-            ],
-            if (item.tags.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: item.tags.take(6).map((t) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Text(t, style: const TextStyle(fontSize: 12, color: Colors.white)),
-                )).toList(),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.auto_awesome, size: 14, color: Colors.white.withOpacity(0.4)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        item.reason,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.7),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
             const SizedBox(height: 12),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: onNavigate,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryMint,
-                    foregroundColor: AppTheme.textBlack,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                if (item.tags.isNotEmpty)
+                  Expanded(
+                    child: SizedBox(
+                      height: 24,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: item.tags.take(3).length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 6),
+                        itemBuilder: (context, index) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              item.tags[index],
+                              style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.5)),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                  child: const Text('Ir'),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: onNavigate,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryMint,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Ir ahora',
+                          style: TextStyle(
+                            color: AppTheme.textBlack,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(Icons.near_me, size: 14, color: AppTheme.textBlack),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
