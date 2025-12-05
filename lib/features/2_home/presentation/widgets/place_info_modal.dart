@@ -57,12 +57,8 @@ class PlaceInfoModal extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: SizedBox(
-                    height: 280,
-                    width: double.infinity,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
                     child: (imageUrl != null && imageUrl!.isNotEmpty)
                         ? Image.network(
                             imageUrl!,

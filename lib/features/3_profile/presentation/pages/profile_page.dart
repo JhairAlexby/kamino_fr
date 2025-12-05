@@ -10,7 +10,7 @@ import 'package:kamino_fr/features/3_profile/presentation/widgets/profile_logs_t
 import 'package:kamino_fr/core/utils/app_animations.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
-
+import 'package:dio/dio.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -130,11 +130,30 @@ class _ProfilePageState extends State<ProfilePage> {
                                     tags: _interests.toList(),
                                   );
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Datos actualizados')));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Datos actualizados'),
+                                        backgroundColor: Colors.green,
+                                      )
+                                    );
                                   }
-                                } catch (_) {
+                                } catch (e) {
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo actualizar los datos')));
+                                    String msg = 'No se pudo actualizar los datos';
+                                    if (e is DioException) {
+                                      final data = e.response?.data;
+                                      if (data is Map && data['message'] != null) {
+                                         msg = data['message'].toString();
+                                      } else if (data is Map && data['error'] != null) {
+                                         msg = data['error'].toString();
+                                      }
+                                    }
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(msg),
+                                        backgroundColor: Colors.redAccent,
+                                      )
+                                    );
                                   }
                                 }
                               },

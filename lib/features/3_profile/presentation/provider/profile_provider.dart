@@ -168,6 +168,28 @@ class ProfileProvider extends ChangeNotifier {
     return user?.visitedPlaces.contains(placeId) ?? false;
   }
 
+  Future<void> markAsVisited(String placeId) async {
+    if (user == null) return;
+    if (isVisited(placeId)) return; // Already visited
+
+    final currentVisited = List<String>.from(user!.visitedPlaces);
+    currentVisited.add(placeId);
+    user = user!.copyWith(visitedPlaces: currentVisited);
+    notifyListeners();
+
+    try {
+      await repo.addVisited(placeId);
+    } catch (e) {
+      // Revert on error
+      if (user != null) {
+        final reverted = List<String>.from(user!.visitedPlaces);
+        reverted.remove(placeId);
+        user = user!.copyWith(visitedPlaces: reverted);
+        notifyListeners();
+      }
+    }
+  }
+
   Future<void> toggleVisited(String placeId) async {
     if (user == null) {
       print('ProfileProvider: user is null, cannot toggle visited');

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/core/app_router.dart';
 
+import 'package:dio/dio.dart';
+
 class RegisterProvider extends ChangeNotifier {
   RegisterProvider(this._repo);
 
@@ -65,6 +67,29 @@ class RegisterProvider extends ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       notifyListeners();
+      
+      if (context.mounted) {
+        String msg = 'Error al registrarse';
+        if (e is DioException) {
+          final data = e.response?.data;
+          if (data is Map && data['message'] != null) {
+             // Backend often returns 'message' or 'error'
+             msg = data['message'].toString();
+          } else if (data is Map && data['error'] != null) {
+             msg = data['error'].toString();
+          }
+        } else {
+          msg = e.toString();
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

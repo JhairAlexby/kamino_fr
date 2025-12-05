@@ -7,7 +7,6 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' show ImageFilter, Path, Paint, Canvas;
 import 'package:flutter/services.dart' show rootBundle, HapticFeedback;
-import 'dart:math' as math;
 import 'package:kamino_fr/core/app_theme.dart';
 import '../provider/home_provider.dart';
 import 'package:kamino_fr/config/environment_config.dart';
@@ -33,9 +32,9 @@ import 'package:kamino_fr/features/2_home/presentation/widgets/home_floating_but
 import 'package:kamino_fr/features/2_home/presentation/widgets/eta_indicator.dart';
 import 'package:kamino_fr/features/2_home/presentation/utils/map_style_helper.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/route_generation_overlay.dart';
-import 'package:kamino_fr/features/2_home/presentation/widgets/destination_confirmation_dialog.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/home_sliding_panel.dart';
 import 'package:kamino_fr/features/3_profile/presentation/pages/profile_page.dart';
+import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 import 'package:kamino_fr/features/5_explore/presentation/pages/explore_page.dart';
 import 'package:kamino_fr/core/utils/app_animations.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -60,7 +59,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   MapboxMap? _mapboxMap;
   StreamSubscription<geo.Position>? _posSub;
-  final bool _followUser = true;
+  bool _followUser = true;
   DateTime? _lastCameraUpdate;
   PlacesLayerController? _placesLayer;
   Uint8List? _userMarkerBytes;
@@ -139,6 +138,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Future<void> _centerCameraOnUser() async {
     try {
+      setState(() => _followUser = true);
       final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
       final pos = Position(geoPos.longitude, geoPos.latitude);
       await _mapboxMap?.setCamera(
@@ -195,6 +195,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     try {
       await _routeManager?.deleteAll();
     } catch (_) {}
+    
+    // Mark as visited automatically
+    if (navVm.destinationId != null) {
+      final profileVm = Provider.of<ProfileProvider>(context, listen: false);
+      await profileVm.markAsVisited(navVm.destinationId!);
+    }
+
     navVm.endRoute();
     _lastProgressIdx = 0;
     if (mounted) {
@@ -285,6 +292,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       currentSpeed: _userSpeed,
       showOverlay: false,
       destinationName: place.name,
+      destinationId: place.id,
     );
     if (navVm.routeCoords.isNotEmpty) {
       await _fitCameraToRoute(navVm.routeCoords);
@@ -418,9 +426,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ChangeNotifierProvider(create: (_) => NavigationProvider(navRepo)),
         ChangeNotifierProvider(create: (_) => PopularityProvider(repository: popularityRepo)),
       ],
-      child: Consumer2<HomeProvider, NavigationProvider>(
-        builder: (context, vm, navVm, child) {
-          // Listener para dibujar la ruta cuando cambie en el provider
+      child: _RecommendationsSyncer(
+        child: Consumer2<HomeProvider, NavigationProvider>(
+          builder: (context, vm, navVm, child) {
+            // Listener para dibujar la ruta cuando cambie en el provider
           if (navVm.routeCoords.isNotEmpty && _mapboxMap != null) {
             _fitCameraToRoute(navVm.routeCoords);
             _drawRoute(navVm.routeCoords);
@@ -472,6 +481,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 try {
                                   controller.compass.updateSettings(CompassSettings(enabled: false));
                                 } catch (_) {}
+                              },
+                              onScrollListener: (ctx) {
+                                if (_followUser) {
+                                  setState(() => _followUser = false);
+                                }
                               },
                               onTapListener: (gestureCtx) async {
                                 _hideTooltip();
@@ -602,6 +616,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 builder: (context) => const GenerationModal(),
                               );
                               if (selectedHours != null) {
+                                navVm.setGenerationOverlay(true);
                                 try {
                                   final geoPos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.best);
                                   final minutes = selectedHours * 60;
@@ -617,6 +632,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     maxPlaces: 5,
                                     nRoutes: 3,
                                   );
+                                  navVm.setGenerationOverlay(false);
                                   await AppAnimations.showFluidDialog<void>(
                                     context: context,
                                     builder: (ctx) => GeneratedRoutesModal(
@@ -641,11 +657,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                           lonDest: first.longitude,
                                           currentSpeed: geoPos.speed,
                                           destinationName: first.name,
+                                          destinationId: first.placeId,
                                         );
                                       },
                                     ),
                                   );
                                 } catch (_) {
+                                  navVm.setGenerationOverlay(false);
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(content: Text('Error al generar rutas')),
@@ -752,12 +770,66 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           );
         },
+        ),
       ),
     );
   }
 }
 
-// _PlaceSheetContent removed in favor of PlacePreviewModal
+class _RecommendationsSyncer extends StatefulWidget {
+  final Widget child;
+  const _RecommendationsSyncer({required this.child});
+
+  @override
+  State<_RecommendationsSyncer> createState() => _RecommendationsSyncerState();
+}
+
+class _RecommendationsSyncerState extends State<_RecommendationsSyncer> {
+  List<String>? _lastFavorites;
+  List<String>? _lastVisited;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final profile = Provider.of<ProfileProvider>(context);
+    final home = Provider.of<HomeProvider>(context, listen: false);
+
+    if (profile.user == null) return;
+
+    final currentFavorites = profile.user!.favoritePlaces;
+    final currentVisited = profile.user!.visitedPlaces;
+
+    bool shouldReload = false;
+
+    if (_lastFavorites != null && !_areListsEqual(_lastFavorites!, currentFavorites)) {
+      shouldReload = true;
+    }
+    if (_lastVisited != null && !_areListsEqual(_lastVisited!, currentVisited)) {
+      shouldReload = true;
+    }
+
+    _lastFavorites = List.from(currentFavorites);
+    _lastVisited = List.from(currentVisited);
+
+    if (shouldReload) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        home.loadRecommendations();
+      });
+    }
+  }
+
+  bool _areListsEqual(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    final setA = Set.from(a);
+    final setB = Set.from(b);
+    return setA.length == setB.length && setA.containsAll(setB);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+}
 
 class _TooltipBubble extends StatefulWidget {
   final String message;

@@ -81,6 +81,7 @@ class HomeExpandedPanel extends StatelessWidget {
             lonDest: place.longitude,
             currentSpeed: pos.speed,
             destinationName: place.name,
+            destinationId: place.id,
           );
           try {
             final http = HttpClient(config, SecureTokenStorage());
@@ -183,6 +184,7 @@ class HomeExpandedPanel extends StatelessWidget {
                               lonDest: place.longitude,
                               currentSpeed: pos.speed,
                               destinationName: place.name,
+                              destinationId: place.id,
                             );
                           } catch (_) {
                             ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('No se pudo iniciar la navegación')));
