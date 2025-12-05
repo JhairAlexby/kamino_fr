@@ -8,6 +8,9 @@ import 'package:kamino_fr/features/1_auth/data/auth_api.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 import 'package:kamino_fr/features/1_auth/data/models/auth_response.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_api.dart';
+import 'package:kamino_fr/features/3_profile/data/logbook_repository.dart';
+import 'package:kamino_fr/features/3_profile/data/logbook_api.dart';
+import 'package:kamino_fr/features/3_profile/data/logbook_entry.dart';
 
 class _FakeRepo extends ProfileRepository {
   _FakeRepo(User u) : super(api: _FakeProfileApi()) { _u = u; }
@@ -50,6 +53,17 @@ class _FakeProfileApi implements ProfileApi {
   Future<void> removeVisited(String placeId) async => throw UnimplementedError();
 }
 
+class _FakeLogbookApi implements LogbookApi {
+  @override
+  Future<List<LogbookEntry>> getMyLogs() async => [];
+  @override
+  Future<LogbookEntry> createLog(LogbookEntry log) async => log;
+}
+
+class _FakeLogbookRepo extends LogbookRepository {
+  _FakeLogbookRepo() : super(api: _FakeLogbookApi());
+}
+
 class _MemoryTokenStorage implements TokenStorage {
   String? a;
   String? r;
@@ -79,7 +93,8 @@ void main() {
     final storage = _MemoryTokenStorage()..a = 'tkn';
     final authRepo = AuthRepository(api: _FakeAuthApi(), storage: storage);
     final appState = AppState(authRepo, repo);
-    final vm = ProfileProvider(repo: repo, storage: storage, appState: appState);
+    final logbookRepo = _FakeLogbookRepo();
+    final vm = ProfileProvider(repo: repo, logbookRepo: logbookRepo, storage: storage, appState: appState);
     await vm.loadProfile();
     expect(vm.user, isNotNull);
     expect(vm.user!.email, 'a@b.com');

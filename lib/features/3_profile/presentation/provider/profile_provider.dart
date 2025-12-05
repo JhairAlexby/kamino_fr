@@ -6,22 +6,34 @@ import 'package:kamino_fr/core/app_router.dart';
 import 'package:kamino_fr/features/1_auth/data/models/user.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_repository.dart';
 import 'package:kamino_fr/features/3_profile/data/logbook_entry.dart';
+import 'package:kamino_fr/features/3_profile/data/logbook_repository.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ProfileProvider extends ChangeNotifier {
   final ProfileRepository repo;
+  final LogbookRepository logbookRepo;
   final TokenStorage storage;
   final AppState appState;
+
+  // Local storage backup
+  final _secureStorage = const FlutterSecureStorage();
+  static const _keyLogsBackup = 'logbook_local_backup';
 
   bool isLoading = false;
   String? errorMessage;
   bool sessionExpired = false;
   User? user;
   
-  // Local cache for logs (since backend doesn't support it yet)
-  final List<LogbookEntry> _logs = [];
+  // Local cache for logs
+  List<LogbookEntry> _logs = [];
   List<LogbookEntry> get logs => _logs;
 
-  ProfileProvider({required this.repo, required this.storage, required this.appState});
+  ProfileProvider({
+    required this.repo,
+    required this.logbookRepo,
+    required this.storage,
+    required this.appState,
+  });
 
   Future<void> loadProfile() async {
     final token = await storage.getAccessToken();
@@ -38,6 +50,8 @@ class ProfileProvider extends ChangeNotifier {
     try {
       final u = await repo.getProfile();
       user = u;
+      // Load logs (Hybrid: API preferred, Local fallback)
+      await _loadLogs();
     } on DioException catch (e) {
       final code = e.response?.statusCode ?? 0;
       if (code == 401) {
@@ -199,11 +213,81 @@ class ProfileProvider extends ChangeNotifier {
   }
 
   // Logbook Methods
-  void addLog(LogbookEntry log) {
-    // Remove existing log for this place if any (to update it)
-    _logs.removeWhere((l) => l.placeId == log.placeId);
-    _logs.insert(0, log);
-    notifyListeners();
+  Future<void> _loadLogs() async {
+    try {
+      print('ProfileProvider: Fetching logs from API...');
+      final remoteLogs = await logbookRepo.getMyLogs();
+      print('ProfileProvider: API returned ${remoteLogs.length} logs');
+      
+      if (remoteLogs.isNotEmpty) {
+        _logs = remoteLogs;
+        // Update local backup
+        _saveLocalBackup(remoteLogs);
+      } else {
+        print('ProfileProvider: API returned empty, checking local backup...');
+        await _loadLocalBackup();
+      }
+      notifyListeners();
+    } catch (e) {
+      print('ProfileProvider: Error fetching remote logs: $e');
+      print('ProfileProvider: Falling back to local backup');
+      await _loadLocalBackup();
+    }
+  }
+
+  Future<void> _loadLocalBackup() async {
+    try {
+      final jsonString = await _secureStorage.read(key: _keyLogsBackup);
+      if (jsonString != null) {
+        _logs = LogbookEntry.decode(jsonString);
+        print('ProfileProvider: Loaded ${_logs.length} logs from local backup');
+        notifyListeners();
+      }
+    } catch (e) {
+      print('ProfileProvider: Error loading local backup: $e');
+    }
+  }
+
+  Future<void> _saveLocalBackup(List<LogbookEntry> logs) async {
+    try {
+      final jsonString = LogbookEntry.encode(logs);
+      await _secureStorage.write(key: _keyLogsBackup, value: jsonString);
+    } catch (e) {
+      print('ProfileProvider: Error saving local backup: $e');
+    }
+  }
+
+  Future<void> addLog(LogbookEntry log) async {
+    try {
+      print('ProfileProvider: Adding log for ${log.placeName}...');
+      
+      // Optimistic update
+      _logs.removeWhere((l) => l.placeId == log.placeId);
+      _logs.insert(0, log);
+      notifyListeners();
+      
+      // Save to local backup immediately
+      _saveLocalBackup(_logs);
+
+      // Send to API
+      print('ProfileProvider: Sending log to API...');
+      final created = await logbookRepo.createLog(log);
+      print('ProfileProvider: Log saved to API successfully. ID: ${created.id}');
+      
+      // Update with real ID/data from server
+      final index = _logs.indexWhere((l) => l.placeId == log.placeId);
+      if (index != -1) {
+        _logs[index] = created;
+        _saveLocalBackup(_logs); // Update backup with real IDs
+        notifyListeners();
+      }
+    } catch (e) {
+      print('ProfileProvider: Error saving log to API: $e');
+      // We KEEP the local log so user doesn't lose data, but maybe flag it?
+      // For now, just keeping it in local state is better than deleting it.
+      errorMessage = 'Error al sincronizar, pero se guardó localmente';
+      notifyListeners();
+    }
   }
 
   LogbookEntry? getLogForPlace(String placeId) {

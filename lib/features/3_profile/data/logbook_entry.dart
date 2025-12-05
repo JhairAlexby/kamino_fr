@@ -1,17 +1,57 @@
+import 'dart:convert';
+
 class LogbookEntry {
-  final String id;
+  final String? id; // Optional for creation
   final String placeId;
-  final String placeName;
-  final String placeImageUrl;
-  final DateTime date;
+  final String? placeName; // Not in API request, keep for local UI if needed
+  final String? placeImageUrl; // Not in API request, keep for local UI
+  final DateTime visitDate;
+  final int rating;
   final String notes;
+  final List<String>? photos;
 
   LogbookEntry({
-    required this.id,
+    this.id,
     required this.placeId,
-    required this.placeName,
-    required this.placeImageUrl,
-    required this.date,
+    this.placeName,
+    this.placeImageUrl,
+    required this.visitDate,
+    required this.rating,
     required this.notes,
+    this.photos,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'placeId': placeId,
+      'visitDate': visitDate.toIso8601String(),
+      'rating': rating,
+      'notes': notes,
+      // 'photos': photos ?? [], // API might expect this too
+    };
+  }
+
+  factory LogbookEntry.fromJson(Map<String, dynamic> json) {
+    return LogbookEntry(
+      id: json['id'] as String?,
+      placeId: json['placeId'] as String,
+      // placeName and placeImageUrl come from joining with Place data usually, 
+      // or might be absent in raw log response. We'll handle nulls gracefully.
+      placeName: json['placeName'] as String?, 
+      placeImageUrl: json['placeImageUrl'] as String?,
+      visitDate: DateTime.parse(json['visitDate'] as String),
+      rating: (json['rating'] as num).toInt(),
+      notes: json['notes'] as String,
+      photos: (json['photos'] as List?)?.map((e) => e.toString()).toList(),
+    );
+  }
+
+  static String encode(List<LogbookEntry> logs) => json.encode(
+    logs.map<Map<String, dynamic>>((log) => log.toJson()).toList(),
+  );
+
+  static List<LogbookEntry> decode(String logs) =>
+    (json.decode(logs) as List<dynamic>)
+        .map<LogbookEntry>((item) => LogbookEntry.fromJson(item))
+        .toList();
 }

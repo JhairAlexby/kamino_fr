@@ -9,6 +9,8 @@ import 'package:kamino_fr/features/1_auth/data/auth_api.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_api.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_repository.dart';
+import 'package:kamino_fr/features/3_profile/data/logbook_api.dart';
+import 'package:kamino_fr/features/3_profile/data/logbook_repository.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
@@ -42,6 +44,9 @@ class MyApp extends StatelessWidget {
     final profileApi = ProfileApiImpl(http.dio);
     final profileRepo = ProfileRepository(api: profileApi);
 
+    final logbookApi = LogbookApiImpl(http.dio);
+    final logbookRepo = LogbookRepository(api: logbookApi);
+
     final appState = AppState(authRepo, profileRepo);
 
     final router = buildRouter(appState);
@@ -56,6 +61,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ProfileProvider(
             repo: profileRepo,
+            logbookRepo: logbookRepo,
             storage: storage,
             appState: appState,
           ),
