@@ -70,46 +70,49 @@ class _ExplorePageState extends State<ExplorePage> {
                   ),
                   const SizedBox(height: 16),
                   // Search Bar
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                    child: Consumer<ExploreProvider>(
-                      builder: (context, provider, _) {
-                        if (_searchController.text != provider.searchQuery) {
-                          _searchController.text = provider.searchQuery;
-                          _searchController.selection = TextSelection.fromPosition(
-                              TextPosition(offset: _searchController.text.length));
-                        }
-                        return TextField(
-                          controller: _searchController,
-                          onChanged: (value) {
-                            provider.setSearchQuery(value);
-                          },
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: 'Buscar lugares...',
-                            hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                            border: InputBorder.none,
-                            icon: Icon(Icons.search, color: Colors.white.withOpacity(0.4)),
-                            suffixIcon: provider.searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear, color: Colors.white70),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      provider.setSearchQuery('');
-                                    },
-                                  )
-                                : null,
+                  Consumer<ExploreProvider>(
+                    builder: (context, provider, _) {
+                      if (_searchController.text != provider.searchQuery) {
+                        _searchController.text = provider.searchQuery;
+                        _searchController.selection = TextSelection.fromPosition(
+                            TextPosition(offset: _searchController.text.length));
+                      }
+                      return TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          provider.setSearchQuery(value);
+                        },
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Buscar lugares...',
+                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.08),
+                          prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.4)),
+                          suffixIcon: provider.searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, color: Colors.white70),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    provider.setSearchQuery('');
+                                  },
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
                           ),
-                        );
-                      },
-                    ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: AppTheme.primaryMint, width: 2),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
