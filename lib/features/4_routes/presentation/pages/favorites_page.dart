@@ -8,7 +8,6 @@ import 'package:kamino_fr/features/2_home/data/places_api.dart';
 import 'package:kamino_fr/features/2_home/data/places_repository.dart';
 import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
-import 'package:kamino_fr/core/utils/app_animations.dart';
 import 'package:kamino_fr/features/2_home/presentation/widgets/place_info_modal.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/navigation_provider.dart';
 import 'package:kamino_fr/features/2_home/presentation/provider/home_provider.dart';
@@ -128,8 +127,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = context.watch<ProfileProvider>();
-
     return Scaffold(
       backgroundColor: AppTheme.textBlack,
       body: SafeArea(

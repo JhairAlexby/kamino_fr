@@ -69,7 +69,17 @@ class _ProfileChangePasswordDialogState extends State<ProfileChangePasswordDialo
           child: const Text('Cancelar', style: TextStyle(color: Colors.white)),
         ),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
+             // Simulación de lógica de cambio de contraseña (aquí deberías llamar a tu repositorio)
+             // Si falla:
+             /*
+             ScaffoldMessenger.of(context).showSnackBar(
+               const SnackBar(
+                 content: Text('Error al cambiar contraseña: [Razón]'),
+                 backgroundColor: Colors.redAccent,
+               ),
+             );
+             */
             Navigator.of(context).pop();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Contraseña actualizada correctamente')),

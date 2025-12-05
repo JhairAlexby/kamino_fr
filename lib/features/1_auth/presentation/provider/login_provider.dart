@@ -4,6 +4,8 @@ import 'package:kamino_fr/core/app_router.dart';
 import 'package:provider/provider.dart';
 import 'package:kamino_fr/features/1_auth/data/auth_repository.dart';
 
+import 'package:dio/dio.dart';
+
 class LoginProvider extends ChangeNotifier {
 
   LoginProvider(this._repo);
@@ -55,6 +57,28 @@ class LoginProvider extends ChangeNotifier {
       _isLoading = false;
       _statusMessage = 'No se pudo iniciar sesión';
       _statusIsError = true;
+      
+      if (context.mounted) {
+        String msg = 'Error al iniciar sesión';
+        if (e is DioException) {
+          final data = e.response?.data;
+          if (data is Map && data['message'] != null) {
+             msg = data['message'].toString();
+          } else if (data is Map && data['error'] != null) {
+             msg = data['error'].toString();
+          }
+        } else {
+          msg = e.toString();
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
       notifyListeners();
       return;
     }

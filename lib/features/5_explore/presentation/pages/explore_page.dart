@@ -205,6 +205,7 @@ class _PlaceCard extends StatelessWidget {
                   currentSpeed: geoPos.speed,
                   showOverlay: false,
                   destinationName: place.name,
+                  destinationId: place.id,
                 );
                 
                 // Switch to map tab (index 0)

@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../data/navigation_repository.dart';
@@ -36,7 +35,15 @@ class NavigationProvider extends ChangeNotifier {
   String? _destinationName;
   String? get destinationName => _destinationName;
 
+  String? _destinationId;
+  String? get destinationId => _destinationId;
+
   NavigationProvider(this._repository);
+
+  void setGenerationOverlay(bool visible) {
+    _isGeneratingRouteOverlay = visible;
+    notifyListeners();
+  }
 
   Future<void> calculateRoute({
     required double latOrigin,
@@ -45,6 +52,7 @@ class NavigationProvider extends ChangeNotifier {
     required double lonDest,
     required double currentSpeed,
     String? destinationName,
+    String? destinationId,
     bool showOverlay = false,
     String? overrideMode,
   }) async {
@@ -54,6 +62,7 @@ class NavigationProvider extends ChangeNotifier {
       _isGeneratingRouteOverlay = true;
     }
     _destinationName = destinationName;
+    _destinationId = destinationId;
     notifyListeners();
 
     try {
@@ -127,6 +136,7 @@ class NavigationProvider extends ChangeNotifier {
     _etaText = '';
     _distanceText = '';
     _destinationName = null;
+    _destinationId = null;
     notifyListeners();
   }
 
