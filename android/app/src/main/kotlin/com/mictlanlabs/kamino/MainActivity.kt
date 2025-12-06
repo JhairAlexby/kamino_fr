@@ -1,4 +1,4 @@
-package com.example.kamino_fr
+package com.mictlanlabs.kamino
 
 import io.flutter.embedding.android.FlutterActivity
 
