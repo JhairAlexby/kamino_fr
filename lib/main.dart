@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'core/app_theme.dart';
 import 'core/app_router.dart';
@@ -14,8 +15,9 @@ import 'package:kamino_fr/features/3_profile/data/logbook_repository.dart';
 import 'package:kamino_fr/features/3_profile/presentation/provider/profile_provider.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es', null);
   final config = EnvironmentConfig.load();
   MapboxOptions.setAccessToken(config.mapboxAccessToken);
   runApp(MyApp(config: config));
@@ -42,7 +44,7 @@ class MyApp extends StatelessWidget {
     final authRepo = AuthRepository(api: authApi, storage: storage);
 
     final profileApi = ProfileApiImpl(http.dio);
-    final profileRepo = ProfileRepository(api: profileApi);
+    final profileRepo = ProfileRepositoryImpl(api: profileApi);
 
     final logbookApi = LogbookApiImpl(http.dio);
     final logbookRepo = LogbookRepository(api: logbookApi);

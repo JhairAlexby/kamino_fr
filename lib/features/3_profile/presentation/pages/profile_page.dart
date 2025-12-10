@@ -100,6 +100,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           key: const ValueKey('datos'),
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+
+                            const SizedBox(height: 24),
                             ProfileInterestsSection(
                               selectedInterests: _interests,
                               onToggleInterest: (opt) {

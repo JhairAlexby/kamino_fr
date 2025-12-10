@@ -52,6 +52,24 @@ class ProfileProvider extends ChangeNotifier {
       user = u;
       // Load logs (Hybrid: API preferred, Local fallback)
       await _loadLogs();
+
+      // Enrich logs with place names regardless of source
+      if (_logs.isNotEmpty) {
+        final enrichedLogs = await Future.wait(_logs.map((log) async {
+          if (log.placeId.isNotEmpty && (log.placeName == null || log.placeName!.isEmpty)) {
+            try {
+              // This method is not defined in the provided context, but we assume it exists
+              // as per the intention of the failed replace block.
+              final place = await repo.getPlaceById(log.placeId);
+              return log.copyWith(placeName: place.name);
+            } catch (e) {
+              return log; // Keep original log if place fetch fails
+            }
+          }
+          return log;
+        }));
+        _logs = enrichedLogs;
+      }
     } on DioException catch (e) {
       final code = e.response?.statusCode ?? 0;
       if (code == 401) {

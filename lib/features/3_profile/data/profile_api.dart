@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:kamino_fr/features/1_auth/data/models/user.dart';
+import 'package:kamino_fr/features/2_home/data/models/place.dart';
 
 abstract class ProfileApi {
   Future<User> getProfile();
@@ -9,6 +10,7 @@ abstract class ProfileApi {
   Future<void> removeFavorite(String placeId);
   Future<void> addVisited(String placeId);
   Future<void> removeVisited(String placeId);
+  Future<Place> getPlaceById(String placeId);
 }
 
 class ProfileApiImpl implements ProfileApi {
@@ -52,12 +54,18 @@ class ProfileApiImpl implements ProfileApi {
 
   @override
   Future<void> addVisited(String placeId) async {
-    await _dio.post('/api/favorites/visited', data: {'placeId': placeId});
+    await _dio.post('/profile/visited', data: {'placeId': placeId});
   }
 
   @override
   Future<void> removeVisited(String placeId) async {
-    await _dio.delete('/api/favorites/visited/$placeId');
+    await _dio.delete('/profile/visited/$placeId');
+  }
+
+  @override
+  Future<Place> getPlaceById(String placeId) async {
+    final response = await _dio.get('/places/$placeId');
+    return Place.fromJson(response.data);
   }
 }
 
