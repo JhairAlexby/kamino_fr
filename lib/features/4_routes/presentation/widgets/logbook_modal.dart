@@ -30,7 +30,7 @@ class _LogbookModalState extends State<LogbookModal> {
   @override
   void initState() {
     super.initState();
-    _notesController = TextEditingController(text: widget.existingLog?.notes ?? '');
+    _notesController = TextEditingController(text: widget.existingLog?.description ?? '');
     if (widget.existingLog != null) {
       _selectedDate = widget.existingLog!.visitDate;
       _rating = widget.existingLog!.rating;
@@ -192,7 +192,7 @@ class _LogbookModalState extends State<LogbookModal> {
                   placeImageUrl: widget.placeImageUrl,
                   visitDate: _selectedDate,
                   rating: _rating,
-                  notes: _notesController.text,
+                  description: _notesController.text,
                 );
                 widget.onSave(log);
                 Navigator.pop(context);

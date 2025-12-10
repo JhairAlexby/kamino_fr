@@ -1,36 +1,45 @@
 import 'package:kamino_fr/features/1_auth/data/models/user.dart';
+import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_api.dart';
 
-class ProfileRepository {
+abstract class ProfileRepository {
+  Future<User> getProfile();
+  Future<User> updateProfile({String? gender, String? firstName, String? lastName, int? age});
+  Future<void> updateTags(List<String> tags);
+  Future<void> addFavorite(String placeId);
+  Future<void> removeFavorite(String placeId);
+  Future<void> addVisited(String placeId);
+  Future<void> removeVisited(String placeId);
+  Future<Place> getPlaceById(String placeId);
+}
+
+class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileApi api;
-  ProfileRepository({required this.api});
+  ProfileRepositoryImpl({required this.api});
 
-  Future<User> getProfile() async {
-    return await api.getProfile();
-  }
+  @override
+  Future<User> getProfile() => api.getProfile();
 
-  Future<User> updateProfile({String? gender, String? firstName, String? lastName, int? age}) async {
-    return await api.updateProfile(gender: gender, firstName: firstName, lastName: lastName, age: age);
-  }
+  @override
+  Future<User> updateProfile({String? gender, String? firstName, String? lastName, int? age}) =>
+      api.updateProfile(gender: gender, firstName: firstName, lastName: lastName, age: age);
 
-  Future<void> updateTags(List<String> tags) async {
-    await api.updateTags(tags);
-  }
+  @override
+  Future<void> updateTags(List<String> tags) => api.updateTags(tags);
 
-  Future<void> addFavorite(String placeId) async {
-    await api.addFavorite(placeId);
-  }
+  @override
+  Future<void> addFavorite(String placeId) => api.addFavorite(placeId);
 
-  Future<void> removeFavorite(String placeId) async {
-    await api.removeFavorite(placeId);
-  }
+  @override
+  Future<void> removeFavorite(String placeId) => api.removeFavorite(placeId);
 
-  Future<void> addVisited(String placeId) async {
-    await api.addVisited(placeId);
-  }
+  @override
+  Future<void> addVisited(String placeId) => api.addVisited(placeId);
 
-  Future<void> removeVisited(String placeId) async {
-    await api.removeVisited(placeId);
-  }
+  @override
+  Future<void> removeVisited(String placeId) => api.removeVisited(placeId);
+
+  @override
+  Future<Place> getPlaceById(String placeId) => api.getPlaceById(placeId);
 }
 

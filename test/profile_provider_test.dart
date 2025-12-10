@@ -10,13 +10,35 @@ import 'package:kamino_fr/features/1_auth/data/models/auth_response.dart';
 import 'package:kamino_fr/features/3_profile/data/profile_api.dart';
 import 'package:kamino_fr/features/3_profile/data/logbook_repository.dart';
 import 'package:kamino_fr/features/3_profile/data/logbook_api.dart';
+import 'package:kamino_fr/features/2_home/data/models/place.dart';
 import 'package:kamino_fr/features/3_profile/data/logbook_entry.dart';
 
 class _FakeRepo extends ProfileRepository {
-  _FakeRepo(User u) : super(api: _FakeProfileApi()) { _u = u; }
+  _FakeRepo(User u) : super() { _u = u; }
   late User _u;
   @override
   Future<User> getProfile() async => _u;
+
+  @override
+  Future<User> updateProfile({String? gender, String? firstName, String? lastName, int? age}) async => throw UnimplementedError();
+
+  @override
+  Future<void> updateTags(List<String> tags) async => throw UnimplementedError();
+
+  @override
+  Future<void> addFavorite(String placeId) async => throw UnimplementedError();
+
+  @override
+  Future<void> removeFavorite(String placeId) async => throw UnimplementedError();
+
+  @override
+  Future<void> addVisited(String placeId) async => throw UnimplementedError();
+
+  @override
+  Future<void> removeVisited(String placeId) async => throw UnimplementedError();
+
+  @override
+  Future<Place> getPlaceById(String placeId) async => throw UnimplementedError();
 }
 
 class _FakeAuthApi implements AuthApi {
@@ -51,6 +73,9 @@ class _FakeProfileApi implements ProfileApi {
 
   @override
   Future<void> removeVisited(String placeId) async => throw UnimplementedError();
+
+  @override
+  Future<Place> getPlaceById(String placeId) async => throw UnimplementedError();
 }
 
 class _FakeLogbookApi implements LogbookApi {
