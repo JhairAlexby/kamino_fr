@@ -188,7 +188,7 @@ class _LogbookModalState extends State<LogbookModal> {
                 final log = LogbookEntry(
                   id: widget.existingLog?.id, // ID is null for new logs
                   placeId: widget.placeId,
-                  placeName: widget.placeName,
+                  placeName: widget.placeName, // Guardar el nombre localmente
                   placeImageUrl: widget.placeImageUrl,
                   visitDate: _selectedDate,
                   rating: _rating,

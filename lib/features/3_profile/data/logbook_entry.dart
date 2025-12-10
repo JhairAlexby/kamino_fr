@@ -45,11 +45,14 @@ class LogbookEntry {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'placeId': placeId,
+      'placeName': placeName,
+      'placeImageUrl': placeImageUrl,
       'visitDate': visitDate.toIso8601String(),
       'rating': rating,
       'description': description,
-      // 'photos': photos ?? [], // API might expect this too
+      'photos': photos,
     };
   }
 
